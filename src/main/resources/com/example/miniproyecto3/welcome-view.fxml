@@ -5,27 +5,26 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-
-<VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" spacing="25.0" style="-fx-background-color: #D9CCC1;" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.miniproyecto3.controller.WelcomeController">
+<VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" spacing="25.0" styleClass="border-pane" stylesheets="@Css/styles.css" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.miniproyecto3.controller.WelcomeController">
    <children>
-      <Label text="BATALLA NAVAL" textFill="#8c503a">
+      <Label styleClass="title-label" text="BATALLA NAVAL" textFill="#8c503a">
          <font>
             <Font name="Rockwell Bold" size="35.0" />
          </font>
       </Label>
-      <Button mnemonicParsing="false" onAction="#HandlePLay" style="-fx-background-color: #BF6415; -fx-border-radius: 15;" text="JUGAR" textFill="#d9ccc1">
+      <Button mnemonicParsing="false" onAction="#HandlePLay" text="JUGAR" textFill="#d9ccc1">
          <font>
             <Font name="Rockwell" size="15.0" />
          </font>
       </Button>
-      <VBox alignment="CENTER" prefHeight="74.0" prefWidth="600.0" style="-fx-background-color: #8C503A;">
+      <VBox alignment="CENTER" prefHeight="74.0" prefWidth="600.0" styleClass="grid-cell">
          <children>
-            <Label text="Jhoan Sebastian Fernandez -2222772" textFill="#d9ccc1">
+            <Label styleClass="text-secondary" text="Jhoan Sebastian Fernandez -2222772" textFill="#d9ccc1">
                <font>
                   <Font size="20.0" />
                </font>
             </Label>
-            <Label text="Daniel Cárdenas Ortiz - 2024076" textFill="#d9ccc1">
+            <Label styleClass="text-secondary" text="Daniel Cárdenas Ortiz - 2024076" textFill="#d9ccc1">
                <font>
                   <Font size="20.0" />
                </font>
