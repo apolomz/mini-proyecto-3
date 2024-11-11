@@ -42,7 +42,14 @@
 }
 
 .grid-cell {
-    -fx-background-color: #D9CCC1;
+    -fx-background-color: #A8DADC;
+    -fx-border-color: #023E73;
+    -fx-border-width: 1px;
+    -fx-alignment: center;
+}
+
+.grid-cell-water {
+    -fx-background-color: linear-gradient(to bottom, #A8DADC, #457B9D);
     -fx-border-color: #023E73;
     -fx-border-width: 1px;
     -fx-alignment: center;

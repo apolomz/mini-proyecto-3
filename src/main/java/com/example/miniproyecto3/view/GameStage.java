@@ -12,7 +12,7 @@ public class GameStage extends Stage {
     public GameStage() throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/miniproyecto3/game-view.fxml"));
         Parent root = loader.load();
-        Scene scene = new Scene(root, 1000, 600);
+        Scene scene = new Scene(root, 1000, 700);
         setScene(scene);
         setTitle("Batalla Naval");
         setResizable(false);
