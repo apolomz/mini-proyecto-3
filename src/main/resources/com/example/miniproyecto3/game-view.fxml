@@ -9,16 +9,16 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="1000.0" styleClass="border-pane" stylesheets="@Css/styles.css" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.miniproyecto3.controller.GameController">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="700.0" prefWidth="1000.0" styleClass="border-pane" stylesheets="@Css/styles.css" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.miniproyecto3.controller.GameController">
    <left>
-      <VBox alignment="TOP_CENTER" prefHeight="200.0" prefWidth="150.0" spacing="10.0" styleClass="vbox-right" stylesheets="@Css/styles.css" BorderPane.alignment="TOP_LEFT">
+      <VBox fx:id="shipVBox" alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="150.0" prefHeight="200.0" prefWidth="150.0" spacing="10.0" styleClass="vbox-right" stylesheets="@Css/styles.css" BorderPane.alignment="TOP_LEFT">
          <children>
             <Label styleClass="text-primary" stylesheets="@Css/label-style.css" text="BARCOS" />
          </children>
       </VBox>
    </left>
    <center>
-      <VBox alignment="CENTER" maxWidth="450.0" prefHeight="300.0" prefWidth="300.0" spacing="50.0" styleClass="grid-pane" stylesheets="@Css/styles.css" BorderPane.alignment="CENTER">
+      <VBox alignment="CENTER" maxWidth="450.0" prefHeight="300.0" prefWidth="300.0" spacing="50.0" style="-fx-border-color: white;" styleClass="grid-pane" stylesheets="@Css/styles.css" BorderPane.alignment="CENTER">
          <children>
             <Label styleClass="text-primary" stylesheets="@Css/styles.css" text="USUARIO" />
             <GridPane fx:id="userGridPane" maxHeight="300.0" maxWidth="300.0" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="300.0" style="-fx-border-color: black;" styleClass="grid-cell" stylesheets="@Css/styles.css">
@@ -51,7 +51,7 @@
       </VBox>
    </center>
    <right>
-      <VBox alignment="CENTER" prefHeight="300.0" prefWidth="450.0" spacing="50.0" styleClass="grid-pane" stylesheets="@Css/styles.css" BorderPane.alignment="CENTER">
+      <VBox alignment="CENTER" prefHeight="300.0" prefWidth="450.0" spacing="50.0" style="-fx-border-color: white;" styleClass="grid-pane" stylesheets="@Css/styles.css" BorderPane.alignment="CENTER">
          <children>
             <Label styleClass="text-primary" stylesheets="@Css/styles.css" text="COMPUTADORA" />
             <GridPane fx:id="computerGridPane" maxHeight="300.0" maxWidth="300.0" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="300.0" style="-fx-border-color: black;" styleClass="grid-cell" stylesheets="@Css/styles.css">
