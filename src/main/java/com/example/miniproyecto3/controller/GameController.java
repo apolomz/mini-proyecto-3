@@ -1,15 +1,17 @@
 package com.example.miniproyecto3.controller;
 
-import com.example.miniproyecto3.model.CarrierShip;
-import com.example.miniproyecto3.model.Destroyer;
-import com.example.miniproyecto3.model.Frigate;
-import com.example.miniproyecto3.model.Submarine;
+import com.example.miniproyecto3.model.Game;
+import com.example.miniproyecto3.model.exceptions.InvalidPlacementException;
+import com.example.miniproyecto3.model.figures2d.*;
 import com.example.miniproyecto3.view.GameStage;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+
+import java.util.List;
 
 public class GameController {
 
@@ -20,24 +22,15 @@ public class GameController {
     @FXML
     private GridPane computerGridPane;
 
+    private IShip selectedShip;
+    private final Game game = new Game();
 
     public void initialize(){
         System.out.println("Controlador juego cargado");
+
         setupGrid(userGridPane, "user");
         setupGrid(computerGridPane, "computer");
 
-        CarrierShip ship = new CarrierShip(4);
-        ship.createShipShape(0,0,true);
-        ship.addToPane(shipVBox);
-        Submarine submarine = new Submarine();
-        submarine.createShipShape(0,0,false);
-        submarine.addToPane(shipVBox);
-        Destroyer destroyer = new Destroyer();
-        destroyer.createShipShape(0,0,true);
-        destroyer.addToPane(shipVBox);
-        Frigate frigate = new Frigate();
-        frigate.createShipShape(0,0,true);
-        frigate.addToPane(shipVBox);
     }
     @FXML
     void handleExit(ActionEvent event) {
@@ -46,31 +39,130 @@ public class GameController {
 
     @FXML
     void handleRestart(ActionEvent event) {
-
+        userGridPane.getChildren().clear();
+        computerGridPane.getChildren().clear();
+        game.resetGame();
+        setupGrid(userGridPane, "user");
+        setupGrid(computerGridPane, "computer");
     }
 
     private void setupGrid(GridPane gridPane, String player) {
         for (int i = 0; i < 11; i++) {
             for (int j = 0; j < 11; j++) {
-                Label cell = new Label();
-                cell.setPrefSize(30, 30);
-
                 if (i > 0 && j > 0) {
+                    // Crear botón para las celdas de juego
+                    Button cell = new Button();
+                    cell.setPrefSize(30, 30);
+                    cell.setStyle("-fx-hgrow: NEVER; -fx-vgrow: NEVER;");
+
                     cell.getStyleClass().add("grid-cell-water");
+                    String cellId = player + "_cell_" + i + "_" + j;
+                    cell.setId(cellId);
+                    cell.setOnAction(event -> handleCellClick(cellId, cell));
+
+                    gridPane.add(cell, j, i);
                 } else {
-                    cell.getStyleClass().add("grid-cell");
-                }
+                    Label header = new Label();
+                    header.setPrefSize(30, 30);
+                    header.setStyle("-fx-hgrow: NEVER; -fx-vgrow: NEVER;");
 
-                if (i == 0 && j > 0) {
-                    cell.setText(String.valueOf(j));
-                } else if (j == 0 && i > 0) {
-                    cell.setText(String.valueOf((char) ('A' + i - 1)));
-                }
+                    if (i == 0) {
+                        header.setText(j > 0 ? String.valueOf(j) : "");
+                        header.getStyleClass().add("grid-cell-header-number");
+                    } else {
+                        header.setText(String.valueOf((char) ('A' + i - 1)));
+                        header.getStyleClass().add("grid-cell-header-letter");
+                    }
 
-                String cellId = player + "_cell_" + i + "_" + j;
-                cell.setId(cellId);
-                gridPane.add(cell, j, i);
+                    gridPane.add(header, j, i);
+                }
+                gridPane.setHgap(0);
+                gridPane.setVgap(0);
             }
         }
     }
+
+
+
+
+
+    private void handleCellClick(String cellId, Button cell) {
+        if (selectedShip == null) {
+            System.out.println("Selecciona un barco primero");
+            return;
+        }
+
+        try {
+            int shipSize = selectedShip.getShipSize();
+            boolean isHorizontal = true; // Por defecto, podrías alternar entre horizontal y vertical con un botón o lógica
+            if (!game.isPlacementValid(cellId, shipSize, isHorizontal, "user")) {
+                throw new InvalidPlacementException("El barco no se puede colocar en esa posición.");
+            }
+
+            List<String> positions = game.calculatePositions(cellId, shipSize, isHorizontal);
+            for (String pos : positions) {
+                Button targetCell = (Button) userGridPane.lookup("#" + pos);
+                if (targetCell != null) {
+                    targetCell.setStyle("-fx-background-color: #1D3557;"); // Color para indicar la colocación
+                }
+            }
+
+            selectedShip = null;
+        } catch (InvalidPlacementException e) {
+            System.out.println("Error al colocar el barco: " + e.getMessage());
+        }
+    }
+
+
+    private void addShipsToVBox() {
+        IShip[] ships = {
+                new CarrierShip(4),
+                new Submarine(3),
+                new Destroyer(2),
+                new Frigate(1)
+        };
+
+        for (IShip ship : ships) {
+            ship.addToPane(shipVBox);
+        }
+    }
+
+    private void setupShipSelection() {
+        shipVBox.getChildren().forEach(node -> {
+            if (node instanceof Button shipButton) {
+                shipButton.setOnAction(event -> {
+                    selectedShip = game.findShipById(shipButton.getId());
+                    System.out.println("Barco seleccionado: " + selectedShip.getId());
+                });
+            }
+        });
+    }
+
+
+    @FXML
+    void handleCarrierShip(ActionEvent event) {
+        selectedShip = new CarrierShip(4);
+        System.out.println("Seleccionado: Portaaviones (4 casillas)");
+    }
+
+    @FXML
+    void handleDestroyer(ActionEvent event) {
+        selectedShip = new Destroyer(2);
+        System.out.println("Seleccionado: Destructor (2 casillas)");
+    }
+
+    @FXML
+    void handleFrigate(ActionEvent event) {
+        selectedShip = new Frigate(1);
+        System.out.println("Seleccionado: Fragata (1 casilla)");
+    }
+
+    @FXML
+    void handleSubmarine(ActionEvent event) {
+        selectedShip = new Submarine(3);
+        System.out.println("Seleccionado: Submarino (3 casillas)");
+    }
+
+
+
 }

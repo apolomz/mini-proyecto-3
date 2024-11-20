@@ -1,16 +1,18 @@
-package com.example.miniproyecto3.model;
+package com.example.miniproyecto3.model.figures2d;
 
 import javafx.scene.Group;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
 
-public class Destroyer implements IShip{
-    private int size = 2;
+public class Destroyer implements IShip {
+    private int size;
     private Polygon shipShape;
     private Group shipGroup;
+    private String id;
 
-    public Destroyer(){
+    public Destroyer(int size){
+        this.size = size;
         shipShape = new Polygon();
         shipGroup = new Group();
     }
@@ -32,7 +34,20 @@ public class Destroyer implements IShip{
 
     @Override
     public void addToPane(Pane pane){
+        shipGroup.setId(this.id);
         pane.getChildren().add(shipShape);
+    }
+
+    public void setId(String id){
+        this.id = id;
+    }
+
+    public String getId(){
+        return id;
+    }
+
+    public int getShipSize(){
+        return size;
     }
 
 }

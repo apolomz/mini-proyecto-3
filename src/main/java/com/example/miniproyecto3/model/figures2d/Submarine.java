@@ -1,4 +1,4 @@
-package com.example.miniproyecto3.model;
+package com.example.miniproyecto3.model.figures2d;
 
 import javafx.scene.Group;
 import javafx.scene.layout.Pane;
@@ -6,13 +6,15 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polygon;
 
-public class Submarine implements IShip{
-    private int size = 3;
+public class Submarine implements IShip {
+    private int size;
     private Polygon shipShape;
     private Circle periscope;
     private Group shipGroup;
+    private String id;
 
-    public Submarine(){
+    public Submarine(int size){
+        this.size = size;
         shipShape = new Polygon();
         periscope = new Circle();
         shipGroup = new Group();
@@ -48,6 +50,19 @@ public class Submarine implements IShip{
 
     @Override
     public void addToPane(Pane pane){
+        shipGroup.setId(this.id);
         pane.getChildren().add(shipGroup);
+    }
+
+    public void setId(String id){
+        this.id = id;
+    }
+
+    public String getId(){
+        return id;
+    }
+
+    public int getShipSize(){
+        return size;
     }
 }
