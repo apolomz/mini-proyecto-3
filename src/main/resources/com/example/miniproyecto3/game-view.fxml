@@ -115,6 +115,7 @@
    <bottom>
       <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="100.0" styleClass="vbox-right" stylesheets="@Css/styles.css" BorderPane.alignment="CENTER">
          <children>
+            <Button fx:id="playButton" disable="true" mnemonicParsing="false" onAction="#handlePlay" text="COMENZAR" />
             <Button mnemonicParsing="false" onAction="#handleRestart" styleClass="button-style" stylesheets="@Css/styles.css" text="REINICIAR" />
             <Button mnemonicParsing="false" onAction="#handleExit" styleClass="button-style" stylesheets="@Css/styles.css" text="SALIR" />
          </children>
