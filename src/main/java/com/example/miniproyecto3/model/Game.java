@@ -56,28 +56,37 @@ public class Game implements IGame{
 
     @Override
     public void placeShip(String startCellId, int shipSize, boolean isHorizontal) throws InvalidPlacementException {
-        List<String> positions = calculatePositions(startCellId, shipSize, isHorizontal);
-        for (String pos : positions) {
-            int[] coords = parseCellId(pos);
-            int row = coords[0], col = coords[1];
-            if (userGrid[row][col]) {
-                throw new InvalidPlacementException("Posición ya ocupada: " + pos);
+        int[] coords = parseCellId(startCellId);
+        int startRow = coords[0] - 1;  // Ajustar para índices base-0
+        int startCol = coords[1] - 1;
+
+        // Verificar límites del tablero
+        if (isHorizontal) {
+            if (startCol + shipSize > 10) {
+                throw new InvalidPlacementException("El barco se sale del tablero horizontalmente");
             }
+        } else {
+            if (startRow + shipSize > 10) {
+                throw new InvalidPlacementException("El barco se sale del tablero verticalmente");
+            }
+        }
+
+        // Verificar superposición con otros barcos
+        for (int i = 0; i < shipSize; i++) {
+            int row = isHorizontal ? startRow : startRow + i;
+            int col = isHorizontal ? startCol + i : startCol;
+
+            if (row >= 10 || col >= 10 || userGrid[row][col]) {
+                throw new InvalidPlacementException("Posición ocupada o inválida");
+            }
+        }
+
+        // Colocar el barco
+        for (int i = 0; i < shipSize; i++) {
+            int row = isHorizontal ? startRow : startRow + i;
+            int col = isHorizontal ? startCol + i : startCol;
             userGrid[row][col] = true;
         }
-
-        IShip ship;
-        if (shipSize == 4) {
-            ship = new CarrierShip(shipSize);
-        } else if (shipSize == 3) {
-            ship = new Submarine(shipSize);
-        } else if (shipSize == 2) {
-            ship = new Destroyer(shipSize);
-        } else {
-            ship = new Frigate(shipSize);
-        }
-
-        userShips.add(ship);
     }
 
     public List<String> calculatePositions(String startCellId, int shipSize, boolean isHorizontal) throws InvalidPlacementException {
@@ -141,8 +150,8 @@ public class Game implements IGame{
     @Override
     public int[] parseCellId(String cellId) {
         String[] parts = cellId.split("_");
-        int row = Integer.parseInt(parts[2]) - 1; // Restar 1 para ajustar a índices de matriz
-        int col = Integer.parseInt(parts[3]) - 1;
+        int row = Integer.parseInt(parts[2]);  // Ya no restamos 1
+        int col = Integer.parseInt(parts[3]);
         return new int[]{row, col};
     }
 
