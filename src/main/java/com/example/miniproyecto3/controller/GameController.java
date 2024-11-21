@@ -16,6 +16,17 @@ import java.util.List;
 public class GameController {
 
     @FXML
+    private Button carrierId;
+
+    @FXML
+    private Button destroyerId;
+
+    @FXML
+    private Button frigateId;
+
+    @FXML
+    private Button submarineId;
+    @FXML
     private VBox shipVBox;
     @FXML
     private GridPane userGridPane;
