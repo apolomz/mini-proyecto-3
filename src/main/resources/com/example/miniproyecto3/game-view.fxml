@@ -14,10 +14,10 @@
       <VBox fx:id="shipVBox" alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="150.0" prefHeight="200.0" prefWidth="150.0" spacing="30.0" styleClass="vbox-right" stylesheets="@Css/styles.css" BorderPane.alignment="TOP_LEFT">
          <children>
             <Label styleClass="text-primary" stylesheets="@Css/label-style.css" text="BARCOS" />
-            <Button mnemonicParsing="false" onAction="#handleCarrierShip" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Portaaviones" />
-            <Button mnemonicParsing="false" onAction="#handleSubmarine" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Submarino" />
-            <Button mnemonicParsing="false" onAction="#handleDestroyer" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Destructor" />
-            <Button mnemonicParsing="false" onAction="#handleFrigate" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Fragata" />
+            <Button fx:id="carrierId" mnemonicParsing="false" onAction="#handleCarrierShip" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Portaaviones" />
+            <Button fx:id="submarineId" mnemonicParsing="false" onAction="#handleSubmarine" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Submarino" />
+            <Button fx:id="destroyerId" mnemonicParsing="false" onAction="#handleDestroyer" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Destructor" />
+            <Button fx:id="frigateId" mnemonicParsing="false" onAction="#handleFrigate" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Fragata" />
          </children>
       </VBox>
    </left>
