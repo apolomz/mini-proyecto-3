@@ -5,7 +5,6 @@
     -fx-padding: 10px 20px;  /* Padding equilibrado (no demasiado grande) */
     -fx-font-weight: bold;  /* Texto en negrita */
     -fx-font-size: 14px;  /* Ajustado para que no se vea grande */
-    -fx-border-radius: 20px;  /* Bordes redondeados para suavizar el diseño */
     -fx-cursor: hand;  /* Cursor en forma de mano */
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 8, 0, 2, 2); /* Sombra ligera para suavizar el botón */
     -fx-transition: background-color 0.3s ease, transform 0.3s ease; /* Transición suave */

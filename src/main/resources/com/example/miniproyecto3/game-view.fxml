@@ -118,6 +118,7 @@
             <Button fx:id="playButton" disable="true" mnemonicParsing="false" onAction="#handlePlay" text="COMENZAR" />
             <Button mnemonicParsing="false" onAction="#handleRestart" styleClass="button-style" stylesheets="@Css/styles.css" text="REINICIAR" />
             <Button mnemonicParsing="false" onAction="#handleExit" styleClass="button-style" stylesheets="@Css/styles.css" text="SALIR" />
+            <Button fx:id="showComputerBoardButton" mnemonicParsing="false" onAction="#handleShowComputerBoard" text="VISUALIZAR" />
          </children>
       </HBox>
    </bottom>

@@ -2,6 +2,7 @@ package com.example.miniproyecto3.controller;
 
 import com.example.miniproyecto3.model.Game;
 import com.example.miniproyecto3.model.exceptions.InvalidPlacementException;
+import com.example.miniproyecto3.model.exceptions.InvalidPlacementOnComputerBoardException;
 import com.example.miniproyecto3.model.figures2d.*;
 import com.example.miniproyecto3.view.GameStage;
 import javafx.event.ActionEvent;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GameController {
+    private GameTurnAdapter gameTurnAdapter;
 
     @FXML
     private Button carrierIdHoz;
@@ -34,7 +36,9 @@ public class GameController {
     @FXML
     private Button submarineIdVer;
     @FXML
-    private Button playButton;  // Nuevo botón "Play" para iniciar el juego
+    private Button playButton;
+    @FXML
+    private Button showComputerBoardButton;
 
     @FXML
     private GridPane userGridPane;
@@ -54,7 +58,8 @@ public class GameController {
 
         setupGrid(userGridPane, "user");
         setupGrid(computerGridPane, "computer");
-        playButton.setDisable(true);  // Desactiva el botón de Play al inicio
+        playButton.setDisable(true);
+        gameTurnAdapter = new GameTurnAdapter(game, userGridPane, computerGridPane, playButton, this);
     }
 
     @FXML
@@ -86,7 +91,8 @@ public class GameController {
         frigateId1Ver.setDisable(false);
         frigateIdVer.setDisable(false);
 
-        playButton.setDisable(true);  // Desactiva el botón de Play al reiniciar
+        playButton.setDisable(true);
+        showComputerBoardButton.setDisable(false);
     }
 
     private void setupGrid(GridPane gridPane, String player) {
@@ -133,6 +139,11 @@ public class GameController {
         }
 
         try {
+            // Verificar si la casilla pertenece al tablero del jugador
+            if (cellId.startsWith("computer")) {
+                throw new InvalidPlacementOnComputerBoardException("No puedes colocar barcos en el tablero de la computadora.");
+            }
+
             int shipSize = selectedShip.getShipSize();
             boolean isHorizontal = selectedShip.isHorizontal();
 
@@ -158,10 +169,13 @@ public class GameController {
             } else {
                 throw new InvalidPlacementException("El barco no se puede colocar en esas celdas.");
             }
+        } catch (InvalidPlacementOnComputerBoardException e) {
+            System.out.println(e.getMessage());
         } catch (InvalidPlacementException e) {
             System.out.println("Error al colocar el barco: " + e.getMessage());
         }
     }
+
 
     private void updateShipCounter(IShip ship) {
         if (ship instanceof CarrierShip) {
@@ -286,8 +300,38 @@ public class GameController {
         this.selectedShip.setOrientation(isHorizontal);
     }
 
+
+    @FXML
+    void handleShowComputerBoard(ActionEvent event) {
+        // Mostrar el tablero de la computadora en el GridPane
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                Button cellButton = (Button) computerGridPane.lookup("#computer_cell_" + (i + 1) + "_" + (j + 1));
+                if (game.getComputerGrid()[i][j]) {
+                    // Mostrar barco (en este caso, marcar las celdas con un color diferente o imagen)
+                    cellButton.setStyle("-fx-background-color: #FF0000;"); // Rojo para los barcos
+                } else {
+                    cellButton.setStyle("-fx-background-color: #1D3557;"); // Azul para agua
+                }
+            }
+        }
+        showComputerBoardButton.setDisable(true); // Deshabilitar el botón después de mostrar el tablero
+    }
+    public boolean checkGameOver() {
+        // Verificar si todos los barcos de la computadora han sido hundidos
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                if (game.getComputerGrid()[i][j]) {
+                    return false;  // Si hay algún barco restante, el juego sigue
+                }
+            }
+        }
+        return true;  // Si no hay barcos restantes, el jugador ha ganado
+    }
     @FXML
     void handlePlay(ActionEvent event) {
-        // Código para iniciar el juego
+        gameTurnAdapter.handlePlay();
     }
+
+
 }
