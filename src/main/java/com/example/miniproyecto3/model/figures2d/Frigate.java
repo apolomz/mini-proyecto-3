@@ -11,11 +11,13 @@ public class Frigate implements IShip {
     private Group shipGroup;
     private String id;
     private int size;
+    private boolean isHorizontal;
 
     public Frigate(int size){
         this.size = size;
         shipShape = new Polygon();
         shipGroup = new Group();
+        isHorizontal = true;
     }
 
     @Override
@@ -50,5 +52,13 @@ public class Frigate implements IShip {
     public int getShipSize(){
         return size;
     }
+    @Override
+    public boolean isHorizontal() {
+        return isHorizontal;
+    }
 
+    @Override
+    public void setOrientation(boolean isHorizontal) {
+        this.isHorizontal = isHorizontal;
+    }
 }

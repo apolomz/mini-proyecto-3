@@ -14,12 +14,14 @@ public class CarrierShip implements IShip {
     private Line shipBase;
     private Group shipGroup;
     private String id;
+    private boolean isHorizontal;
 
     public CarrierShip(int size) {
         this.size = size;
         chimneys = new Circle[2];
         shipShape = new Polygon();
         shipGroup = new Group();
+        this.isHorizontal = true;
     }
 
     @Override
@@ -79,6 +81,16 @@ public class CarrierShip implements IShip {
 
     public int getShipSize(){
         return size;
+    }
+
+    @Override
+    public boolean isHorizontal() {
+        return isHorizontal;
+    }
+
+    @Override
+    public void setOrientation(boolean isHorizontal) {
+        this.isHorizontal = isHorizontal;
     }
 
 }

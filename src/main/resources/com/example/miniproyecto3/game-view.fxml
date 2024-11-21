@@ -2,6 +2,7 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
@@ -11,13 +12,37 @@
 
 <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="700.0" prefWidth="1000.0" styleClass="border-pane" stylesheets="@Css/styles.css" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.miniproyecto3.controller.GameController">
    <left>
-      <VBox fx:id="shipVBox" alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="150.0" prefHeight="200.0" prefWidth="150.0" spacing="30.0" styleClass="vbox-right" stylesheets="@Css/styles.css" BorderPane.alignment="TOP_LEFT">
+      <VBox fx:id="shipVBox" alignment="TOP_CENTER" maxHeight="500.0" maxWidth="150.0" prefHeight="500.0" prefWidth="150.0" spacing="20.0" styleClass="vbox-right" stylesheets="@Css/styles.css" BorderPane.alignment="TOP_LEFT">
          <children>
             <Label styleClass="text-primary" stylesheets="@Css/label-style.css" text="BARCOS" />
-            <Button fx:id="carrierId" mnemonicParsing="false" onAction="#handleCarrierShip" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Portaaviones" />
-            <Button fx:id="submarineId" mnemonicParsing="false" onAction="#handleSubmarine" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Submarino" />
-            <Button fx:id="destroyerId" mnemonicParsing="false" onAction="#handleDestroyer" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Destructor" />
-            <Button fx:id="frigateId" mnemonicParsing="false" onAction="#handleFrigate" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Fragata" />
+            <AnchorPane prefHeight="82.0" prefWidth="163.0">
+               <children>
+                  <Button fx:id="carrierIdVer" layoutY="41.0" mnemonicParsing="false" onAction="#handleCarrierShipVer" prefHeight="44.0" prefWidth="73.0" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Ver" />
+                  <Button fx:id="carrierIdHoz" layoutX="91.0" layoutY="41.0" mnemonicParsing="false" onAction="#handleCarrierShipHoz" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Hoz" />
+                  <Label layoutX="24.0" layoutY="14.0" styleClass="text-primary" stylesheets="@Css/styles.css" text="CarrierShip" />
+               </children>
+            </AnchorPane>
+            <AnchorPane prefHeight="67.0" prefWidth="150.0">
+               <children>
+                  <Button fx:id="submarineIdVer" layoutY="24.0" mnemonicParsing="false" onAction="#handleSubmarineVer" prefHeight="44.0" prefWidth="74.0" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Ver" />
+                  <Button fx:id="submarineIdHoz" layoutX="85.0" layoutY="23.0" mnemonicParsing="false" onAction="#handleSubmarineHoz" prefHeight="46.0" prefWidth="77.0" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Hoz" />
+                  <Label layoutX="26.0" layoutY="2.0" styleClass="text-primary" stylesheets="@Css/styles.css" text="Submarino" />
+               </children>
+            </AnchorPane>
+            <AnchorPane prefHeight="97.0" prefWidth="163.0">
+               <children>
+                  <Button fx:id="destroyerIdVer" layoutY="44.0" mnemonicParsing="false" onAction="#handleDestroyerVer" prefHeight="44.0" prefWidth="70.0" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Ver" />
+                  <Button fx:id="destroyerId1Hoz" layoutX="85.0" layoutY="44.0" mnemonicParsing="false" onAction="#handleDestroyerHoz" prefHeight="44.0" prefWidth="75.0" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Hoz" />
+                  <Label layoutX="24.0" layoutY="2.0" styleClass="text-primary" stylesheets="@Css/styles.css" text="Destructor" />
+               </children>
+            </AnchorPane>
+            <AnchorPane prefHeight="46.0" prefWidth="163.0">
+               <children>
+                  <Button fx:id="frigateIdVer" layoutY="40.0" mnemonicParsing="false" onAction="#handleFrigateVer" prefHeight="44.0" prefWidth="74.0" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Ver" />
+                  <Button fx:id="frigateId1Ver" layoutX="87.0" layoutY="40.0" mnemonicParsing="false" onAction="#handleFrigateHoz" prefHeight="44.0" prefWidth="75.0" styleClass="ship-button" stylesheets="@Css/shipButton.css" text="Hoz" />
+                  <Label layoutX="43.0" layoutY="14.0" styleClass="text-primary" stylesheets="@Css/styles.css" text="Fragata" />
+               </children>
+            </AnchorPane>
          </children>
       </VBox>
    </left>
@@ -90,6 +115,7 @@
    <bottom>
       <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="100.0" styleClass="vbox-right" stylesheets="@Css/styles.css" BorderPane.alignment="CENTER">
          <children>
+            <Button fx:id="playButton" disable="true" mnemonicParsing="false" onAction="#handlePlay" text="COMENZAR" />
             <Button mnemonicParsing="false" onAction="#handleRestart" styleClass="button-style" stylesheets="@Css/styles.css" text="REINICIAR" />
             <Button mnemonicParsing="false" onAction="#handleExit" styleClass="button-style" stylesheets="@Css/styles.css" text="SALIR" />
          </children>

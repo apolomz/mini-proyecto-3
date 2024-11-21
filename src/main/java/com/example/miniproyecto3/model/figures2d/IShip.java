@@ -8,4 +8,6 @@ public interface IShip {
     void addToPane(Pane pane);
     int getShipSize();
     String getId();
+    boolean isHorizontal();
+    void setOrientation(boolean isHorizontal);
 }

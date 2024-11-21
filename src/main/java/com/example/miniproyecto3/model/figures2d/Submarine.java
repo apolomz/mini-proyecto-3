@@ -12,12 +12,14 @@ public class Submarine implements IShip {
     private Circle periscope;
     private Group shipGroup;
     private String id;
+    private boolean isHorizontal;
 
     public Submarine(int size){
         this.size = size;
         shipShape = new Polygon();
         periscope = new Circle();
         shipGroup = new Group();
+        this.isHorizontal = true;
     }
 
     @Override
@@ -64,5 +66,14 @@ public class Submarine implements IShip {
 
     public int getShipSize(){
         return size;
+    }
+    @Override
+    public boolean isHorizontal() {
+        return isHorizontal;
+    }
+
+    @Override
+    public void setOrientation(boolean isHorizontal) {
+        this.isHorizontal = isHorizontal;
     }
 }
