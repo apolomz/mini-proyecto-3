@@ -23,15 +23,28 @@ public class Game implements IGame{
         initializeComputerGrid();
     }
 
-    @Override
-    public void initializeComputerGrid(){
-        clearGrid(computerGrid);
-
-        placeShipRandomly(4);
-        placeShipRandomly(3);
-        placeShipRandomly(1);
-        placeShipRandomly(2);
+    public boolean[][] getComputerGrid() {
+        return computerGrid;
     }
+    public boolean[][] getUserGrid() {
+        return userGrid;
+    }
+
+    @Override
+    public void initializeComputerGrid() {
+        clearGrid(computerGrid);  // Limpiar el tablero de la computadora
+        placeShipRandomly(4);     // Portaaviones
+        placeShipRandomly(3);     // Submarinos
+        placeShipRandomly(3);
+        placeShipRandomly(2);     // Destructores
+        placeShipRandomly(2);
+        placeShipRandomly(2);
+        placeShipRandomly(1);     // Fragatas
+        placeShipRandomly(1);
+        placeShipRandomly(1);
+        placeShipRandomly(1);
+    }
+
 
     @Override
     public void resetGame(){
