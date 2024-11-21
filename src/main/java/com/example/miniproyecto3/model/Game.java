@@ -9,6 +9,11 @@ import java.util.List;
 
 public class Game implements IGame{
 
+    private int carrierCount = 0;
+    private int destroyerCount = 0;
+    private int frigateCount = 0;
+    private int submarineCount = 0;
+
     private final List<IShip> userShips = new ArrayList<>();
     private final boolean[][] userGrid = new boolean[10][10];
     private final boolean[][] computerGrid = new boolean[10][10];
@@ -140,5 +145,35 @@ public class Game implements IGame{
         // Lógica de validación para el placement del barco
         return true; // Retornar true si es válido, false si no lo es
     }
+
+    public int getCarrierCount() {
+        return carrierCount;
+    }
+
+
+    public int getDestroyerCount() {
+        return destroyerCount;
+    }
+
+    public int getFrigateCount() {
+        return frigateCount;
+    }
+
+    public int getSubmarineCount() {
+        return submarineCount;
+    }
+
+    public void incrementTurnForShip(IShip ship) {
+        if (ship instanceof CarrierShip) {
+            carrierCount++;
+        } else if (ship instanceof Destroyer) {
+            destroyerCount++;
+        } else if (ship instanceof Frigate) {
+            frigateCount++;
+        } else if (ship instanceof Submarine) {
+            submarineCount++;
+        }
+    }
+
 
 }
