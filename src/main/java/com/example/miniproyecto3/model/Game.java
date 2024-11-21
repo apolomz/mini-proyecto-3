@@ -9,6 +9,7 @@ import java.util.List;
 
 public class Game implements IGame{
 
+    private int turnCount = 0;
     private int carrierCount = 0;
     private int destroyerCount = 0;
     private int frigateCount = 0;
@@ -163,17 +164,36 @@ public class Game implements IGame{
         return submarineCount;
     }
 
+
+
     public void incrementTurnForShip(IShip ship) {
         if (ship instanceof CarrierShip) {
             carrierCount++;
         } else if (ship instanceof Destroyer) {
             destroyerCount++;
-        } else if (ship instanceof Frigate) {
-            frigateCount++;
         } else if (ship instanceof Submarine) {
             submarineCount++;
+        } else if (ship instanceof Frigate) {
+            frigateCount++;
         }
+        turnCount++;
     }
 
+    public int getTurnCount() {
+        return turnCount;
+    }
+
+    public int getRequiredTurnsForShip(IShip ship) {
+        if (ship instanceof CarrierShip) {
+            return 1;
+        } else if (ship instanceof Destroyer) {
+            return 3;
+        } else if (ship instanceof Submarine) {
+            return 2;
+        } else if (ship instanceof Frigate) {
+            return 4;
+        }
+        return Integer.MAX_VALUE;
+    }
 
 }
