@@ -1,87 +1,215 @@
 package com.example.miniproyecto3.controller;
 
 import com.example.miniproyecto3.model.Game;
+import com.example.miniproyecto3.model.GameState;
+import com.example.miniproyecto3.model.GameTurnAdapter;
 import com.example.miniproyecto3.model.exceptions.InvalidPlacementException;
 import com.example.miniproyecto3.model.exceptions.InvalidPlacementOnComputerBoardException;
 import com.example.miniproyecto3.model.figures2d.*;
-import com.example.miniproyecto3.view.GameStage;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Group;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class GameController {
-    private GameTurnAdapter gameTurnAdapter;
-
-    @FXML
-    private Button carrierIdHoz;
-    @FXML
-    private Button carrierIdVer;
-    @FXML
-    private Button destroyerId1Hoz;
-    @FXML
-    private Button destroyerIdVer;
-    @FXML
-    private Button frigateId1Ver;
-    @FXML
-    private Button frigateIdVer;
-    @FXML
-    private Button submarineIdHoz;
-    @FXML
-    private Button submarineIdVer;
-    @FXML
-    private Button playButton;
-    @FXML
-    private Button showComputerBoardButton;
-
-    @FXML
-    private GridPane userGridPane;
-    @FXML
-    private GridPane computerGridPane;
-
     private IShip selectedShip;
     private final Game game = new Game();
+    private GameTurnAdapter gameAdapter;
 
-    private int carrierCount = 0;
-    private int destroyerCount = 0;
-    private int frigateCount = 0;
-    private int submarineCount = 0;
+    private int carrierCount = 0, destroyerCount = 0, frigateCount = 0, submarineCount = 0;
 
+    @FXML private Button carrierIdHoz, carrierIdVer, destroyerId1Hoz, destroyerIdVer,
+            frigateId1Ver, frigateIdVer, submarineIdHoz, submarineIdVer,
+            playButton, showComputerBoardButton, loadGameButton, saveGameButton;
+    @FXML private GridPane userGridPane, computerGridPane;
+
+    // Inicialización y configuración de la vista
     public void initialize() {
         System.out.println("Controlador juego cargado");
-
         setupGrid(userGridPane, "user");
         setupGrid(computerGridPane, "computer");
         playButton.setDisable(true);
-        gameTurnAdapter = new GameTurnAdapter(game, userGridPane, computerGridPane, playButton, this);
+        gameAdapter = new GameTurnAdapter(game);
+        disableComputerBoard(true);
     }
 
-    @FXML
-    void handleExit(ActionEvent event) {
-        GameStage.deleteInstance();
+    private void disableComputerBoard(boolean disable) {
+        for (int i = 1; i <= 10; i++) {
+            for (int j = 1; j <= 10; j++) {
+                Button cellButton = (Button) computerGridPane.lookup("#computer_cell_" + i + "_" + j);
+                if (cellButton != null) {
+                    cellButton.setDisable(disable);
+                }
+            }
+        }
     }
 
+
     @FXML
-    void handleRestart(ActionEvent event) {
+    private void handleRestart(ActionEvent event) {
+        resetGame();
+        gameAdapter = new GameTurnAdapter(game);
+        playButton.setDisable(true);
+        showComputerBoardButton.setDisable(false);
+        disableComputerBoard(true); // Desactivar el tablero al reiniciar
+    }
+
+
+    @FXML void handlePlay(ActionEvent event) {
+        disableComputerBoard(false); // Habilitar el tablero
+        enableComputerBoardClicks();
+        playButton.setDisable(true);
+        // Actualizar el estado del juego
+        game.getCurrentState().setGameInProgress(true);
+    }
+
+    private void enableComputerBoardClicks() {
+        for (int i = 1; i <= 10; i++) {
+            for (int j = 1; j <= 10; j++) {
+                Button cellButton = (Button) computerGridPane.lookup("#computer_cell_" + i + "_" + j);
+                if (cellButton != null) {
+                    cellButton.setOnAction(e -> handleShot(cellButton.getId()));
+                }
+            }
+        }
+    }
+
+    private void handleShot(String cellId) {
+        int[] coords = game.parseCellId(cellId);
+        int result = gameAdapter.playerShoot(coords[0], coords[1]);
+
+        Button cellButton = (Button) computerGridPane.lookup("#" + cellId);
+
+        if (result != -1) {  // Solo procesar si el disparo fue válido
+            switch (result) {
+                case GameTurnAdapter.WATER:
+                    cellButton.setStyle("-fx-background-color: #87CEEB;");  // Azul claro para agua
+                    cellButton.setText("X");
+                    break;
+                case GameTurnAdapter.HIT:
+                    cellButton.setStyle("-fx-background-color: #FF4444;");  // Rojo para hit
+                    cellButton.setText("H");
+                    break;
+                case GameTurnAdapter.SUNK:
+                    // Marcar todo el barco como hundido
+                    markSunkShip(coords[0], coords[1], computerGridPane);
+                    break;
+            }
+
+            if (gameAdapter.isGameOver()) {
+                showGameOverDialog(gameAdapter.getWinner());
+            } else {
+                // Siempre ejecutar el turno de la computadora después del jugador
+                handleComputerTurn();
+            }
+        }
+    }
+    private void markSunkShip(int row, int col, GridPane gridPane) {
+        // Marcar la celda actual
+        String currentCellId = String.format("computer_cell_%d_%d", row, col);
+        Button currentButton = (Button) gridPane.lookup("#" + currentCellId);
+        if (currentButton != null) {
+            currentButton.setStyle("-fx-background-color: #8B0000;");  // Rojo oscuro para hundido
+            currentButton.setText("S");
+        }
+
+        // Buscar y marcar celdas adyacentes del mismo barco
+        checkAndMarkAdjacentCells(row, col, gridPane);
+    }
+    private void checkAndMarkAdjacentCells(int row, int col, GridPane gridPane) {
+        // Verificar horizontal
+        markDirection(row, col, 0, 1, gridPane);  // Derecha
+        markDirection(row, col, 0, -1, gridPane); // Izquierda
+
+        // Verificar vertical
+        markDirection(row, col, 1, 0, gridPane);  // Abajo
+        markDirection(row, col, -1, 0, gridPane); // Arriba
+    }
+    private void markDirection(int row, int col, int rowDelta, int colDelta, GridPane gridPane) {
+        int currentRow = row;
+        int currentCol = col;
+
+        while (true) {
+            currentRow += rowDelta;
+            currentCol += colDelta;
+
+            if (currentRow < 1 || currentRow > 10 || currentCol < 1 || currentCol > 10) {
+                break;
+            }
+
+            String cellId = String.format("computer_cell_%d_%d", currentRow, currentCol);
+            Button button = (Button) gridPane.lookup("#" + cellId);
+
+            if (button == null ||
+                    !button.getStyle().contains("-fx-background-color: #FF4444")) {
+                break;
+            }
+
+            button.setStyle("-fx-background-color: #8B0000;");
+            button.setText("S");
+        }
+    }
+
+    // Nuevo método para manejar el turno de la computadora:
+    private void handleComputerTurn() {
+        int[] shotResult = gameAdapter.computerShoot();
+        if (shotResult != null) {
+            String cellId = "user_cell_" + (shotResult[0] + 1) + "_" + (shotResult[1] + 1);
+            Button cellButton = (Button) userGridPane.lookup("#" + cellId);
+
+            switch (shotResult[2]) {
+                case GameTurnAdapter.WATER:
+                    cellButton.setStyle("-fx-background-color: #87CEEB;");
+                    cellButton.setText("X");
+                    break;
+                case GameTurnAdapter.HIT:
+                    cellButton.setStyle("-fx-background-color: #FF4444;");
+                    // La computadora dispara de nuevo si acierta
+                    handleComputerTurn();
+                    break;
+                case GameTurnAdapter.SUNK:
+                    cellButton.setStyle("-fx-background-color: #8B0000;");
+                    // La computadora dispara de nuevo si hunde un barco
+                    handleComputerTurn();
+                    break;
+            }
+        }
+    }
+
+    // Nuevo método para mostrar el diálogo de fin de juego:
+    private void showGameOverDialog(String winner) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Game Over");
+        alert.setHeaderText("¡Juego terminado!");
+        alert.setContentText(winner + " ha ganado el juego!");
+        alert.showAndWait();
+    }
+
+    private void resetGame() {
         userGridPane.getChildren().clear();
         computerGridPane.getChildren().clear();
         game.resetGame();
         setupGrid(userGridPane, "user");
         setupGrid(computerGridPane, "computer");
+        resetCountersAndButtons();
+    }
 
-        // Resetear los contadores
-        carrierCount = 0;
-        destroyerCount = 0;
-        frigateCount = 0;
-        submarineCount = 0;
+    private void resetCountersAndButtons() {
+        carrierCount = destroyerCount = frigateCount = submarineCount = 0;
+        resetShipButtons();
+        playButton.setDisable(true);
+        showComputerBoardButton.setDisable(false);
+    }
 
-        // Reactivar los botones
+    private void resetShipButtons() {
         carrierIdHoz.setDisable(false);
         carrierIdVer.setDisable(false);
         destroyerId1Hoz.setDisable(false);
@@ -90,18 +218,15 @@ public class GameController {
         submarineIdVer.setDisable(false);
         frigateId1Ver.setDisable(false);
         frigateIdVer.setDisable(false);
-
-        playButton.setDisable(true);
-        showComputerBoardButton.setDisable(false);
     }
 
+    // Configuración de las celdas del tablero
     private void setupGrid(GridPane gridPane, String player) {
         for (int i = 0; i < 11; i++) {
             for (int j = 0; j < 11; j++) {
                 if (i > 0 && j > 0) {
                     StackPane stack = new StackPane();
                     stack.setPrefSize(30, 30);
-
                     Button cellButton = new Button();
                     cellButton.setPrefSize(30, 30);
                     cellButton.setStyle("-fx-hgrow: NEVER; -fx-vgrow: NEVER;");
@@ -109,7 +234,13 @@ public class GameController {
 
                     String cellId = player + "_cell_" + i + "_" + j;
                     cellButton.setId(cellId);
-                    cellButton.setOnAction(event -> handleCellClick(cellId, cellButton, stack));
+
+                    if (player.equals("computer")) {
+                        cellButton.setOnAction(event -> handleShot(cellId));
+                        cellButton.setDisable(true);
+                    } else {
+                        cellButton.setOnAction(event -> handleCellClick(cellId, cellButton, stack));
+                    }
 
                     stack.getChildren().add(cellButton);
                     gridPane.add(stack, j, i);
@@ -132,6 +263,23 @@ public class GameController {
         gridPane.setVgap(0);
     }
 
+
+
+    private void createGridHeader(GridPane gridPane, int i, int j) {
+        Label header = new Label();
+        header.setPrefSize(30, 30);
+        header.setStyle("-fx-hgrow: NEVER; -fx-vgrow: NEVER;");
+        if (i == 0) {
+            header.setText(j > 0 ? String.valueOf(j) : "");
+            header.getStyleClass().add("grid-cell-header-number");
+        } else {
+            header.setText(String.valueOf((char) ('A' + i - 1)));
+            header.getStyleClass().add("grid-cell-header-letter");
+        }
+        gridPane.add(header, j, i);
+    }
+
+    // Manejo de la colocación de barcos
     private void handleCellClick(String cellId, Button cellButton, StackPane stackPane) {
         if (selectedShip == null) {
             System.out.println("Selecciona un barco primero");
@@ -139,111 +287,82 @@ public class GameController {
         }
 
         try {
-            // Verificar si la casilla pertenece al tablero del jugador
             if (cellId.startsWith("computer")) {
                 throw new InvalidPlacementOnComputerBoardException("No puedes colocar barcos en el tablero de la computadora.");
             }
 
             int shipSize = selectedShip.getShipSize();
             boolean isHorizontal = selectedShip.isHorizontal();
-
             List<String> selectedCells = selectShipCells(cellId, shipSize, isHorizontal);
 
             if (selectedCells != null && areCellsValid(selectedCells, "user")) {
-                for (String pos : selectedCells) {
-                    Button targetCell = (Button) userGridPane.lookup("#" + pos);
-                    if (targetCell != null) {
-                        targetCell.setStyle("-fx-background-color: #1D3557;");
-                        targetCell.setDisable(true);
-                    }
-                }
-
-                Group shipGroup = selectedShip.createShipShape(0, 0, isHorizontal);
-                stackPane.getChildren().add(shipGroup);
-
+                game.placeShip(cellId, shipSize, isHorizontal);  // Actualizar el modelo
+                placeShip(selectedCells, stackPane);  // Actualizar la vista
                 updateShipCounter(selectedShip);
                 selectedShip = null;
-
-                // Verificar si todos los barcos han sido colocados
                 checkIfAllShipsPlaced();
-            } else {
-                throw new InvalidPlacementException("El barco no se puede colocar en esas celdas.");
             }
-        } catch (InvalidPlacementOnComputerBoardException e) {
-            System.out.println(e.getMessage());
         } catch (InvalidPlacementException e) {
-            System.out.println("Error al colocar el barco: " + e.getMessage());
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Posición inválida");
+            alert.setContentText(e.getMessage());
+            alert.showAndWait();
+        }catch (InvalidPlacementOnComputerBoardException e){
+            System.out.println(e.getMessage());
         }
     }
 
-
-    private void updateShipCounter(IShip ship) {
-        if (ship instanceof CarrierShip) {
-            carrierCount++;
-            if (carrierCount >= 1) {
-                carrierIdHoz.setDisable(true);
-                carrierIdVer.setDisable(true);
-            }
-        } else if (ship instanceof Destroyer) {
-            destroyerCount++;
-            if (destroyerCount >= 3) {
-                destroyerId1Hoz.setDisable(true);
-                destroyerIdVer.setDisable(true);
-            }
-        } else if (ship instanceof Submarine) {
-            submarineCount++;
-            if (submarineCount >= 2) {
-                submarineIdHoz.setDisable(true);
-                submarineIdVer.setDisable(true);
-            }
-        } else if (ship instanceof Frigate) {
-            frigateCount++;
-            if (frigateCount >= 4) {
-                frigateId1Ver.setDisable(true);
-                frigateIdVer.setDisable(true);
+    private void placeShip(List<String> selectedCells, StackPane stackPane) {
+        for (String pos : selectedCells) {
+            Button targetCell = (Button) userGridPane.lookup("#" + pos);
+            if (targetCell != null) {
+                targetCell.setStyle("-fx-background-color: #1D3557;");
+                targetCell.setDisable(true);
             }
         }
+        Group shipGroup = selectedShip.createShipShape(0, 0, selectedShip.isHorizontal());
+        stackPane.getChildren().add(shipGroup);
+    }
+
+    private void updateShipCounter(IShip ship) {
+        if (ship instanceof CarrierShip && ++carrierCount >= 1) disableShipButtons(carrierIdHoz, carrierIdVer);
+        if (ship instanceof Destroyer && ++destroyerCount >= 3) disableShipButtons(destroyerId1Hoz, destroyerIdVer);
+        if (ship instanceof Submarine && ++submarineCount >= 2) disableShipButtons(submarineIdHoz, submarineIdVer);
+        if (ship instanceof Frigate && ++frigateCount >= 4) disableShipButtons(frigateId1Ver, frigateIdVer);
+    }
+
+    private void disableShipButtons(Button... buttons) {
+        for (Button button : buttons) button.setDisable(true);
     }
 
     private void checkIfAllShipsPlaced() {
-        // Verificar si todos los barcos han sido colocados
         if (carrierCount >= 1 && destroyerCount >= 3 && frigateCount >= 4 && submarineCount >= 2) {
             playButton.setDisable(false);  // Habilita el botón Play cuando todos los barcos estén colocados
         }
     }
 
+    // Lógica de selección y validación de celdas
     public List<String> selectShipCells(String startCellId, int size, boolean isHorizontal) {
         List<String> selectedCells = new ArrayList<>();
-        int startRow = extractRow(startCellId);
-        int startCol = extractColumn(startCellId);
+        int[] coords = game.parseCellId(startCellId);
+        int startRow = coords[0];
+        int startCol = coords[1];
 
         for (int i = 0; i < size; i++) {
             int row = isHorizontal ? startRow : startRow + i;
             int col = isHorizontal ? startCol + i : startCol;
 
-            if (isValidCell(row, col)) {
-                selectedCells.add("user_cell_" + row + "_" + col);
-            } else {
+            // Verificar límites del tablero (ahora usando 1-10 en lugar de 0-9)
+            if (row < 1 || row > 10 || col < 1 || col > 10) {
                 return null;
             }
-        }
 
+            selectedCells.add("user_cell_" + row + "_" + col);
+        }
         return selectedCells;
     }
 
-    private int extractRow(String cellId) {
-        String[] parts = cellId.split("_");
-        return Integer.parseInt(parts[2]);
-    }
 
-    private int extractColumn(String cellId) {
-        String[] parts = cellId.split("_");
-        return Integer.parseInt(parts[3]);
-    }
-
-    private boolean isValidCell(int row, int col) {
-        return row >= 0 && row < 10 && col >= 0 && col < 10;
-    }
 
     private boolean areCellsValid(List<String> selectedCells, String player) {
         for (String cellId : selectedCells) {
@@ -255,82 +374,208 @@ public class GameController {
         return true;
     }
 
-    @FXML
-    void handleCarrierShipHoz(ActionEvent event) {
-        selectShip(new CarrierShip(4), true);
-    }
-
-    @FXML
-    void handleCarrierShipVer(ActionEvent event) {
-        selectShip(new CarrierShip(4), false);
-    }
-
-    @FXML
-    void handleDestroyerHoz(ActionEvent event) {
-        selectShip(new Destroyer(2), true);
-    }
-
-    @FXML
-    void handleDestroyerVer(ActionEvent event) {
-        selectShip(new Destroyer(2), false);
-    }
-
-    @FXML
-    void handleFrigateHoz(ActionEvent event) {
-        selectShip(new Frigate(1), true);
-    }
-
-    @FXML
-    void handleFrigateVer(ActionEvent event) {
-        selectShip(new Frigate(1), false);
-    }
-
-    @FXML
-    void handleSubmarineHoz(ActionEvent event) {
-        selectShip(new Submarine(3), true);
-    }
-
-    @FXML
-    void handleSubmarineVer(ActionEvent event) {
-        selectShip(new Submarine(3), false);
-    }
+    // Selección de barcos
+    @FXML void handleCarrierShipHoz(ActionEvent event) { selectShip(new CarrierShip(4), true); }
+    @FXML void handleCarrierShipVer(ActionEvent event) { selectShip(new CarrierShip(4), false); }
+    @FXML void handleDestroyerHoz(ActionEvent event) { selectShip(new Destroyer(2), true); }
+    @FXML void handleDestroyerVer(ActionEvent event) { selectShip(new Destroyer(2), false); }
+    @FXML void handleFrigateHoz(ActionEvent event) { selectShip(new Frigate(1), true); }
+    @FXML void handleFrigateVer(ActionEvent event) { selectShip(new Frigate(1), false); }
+    @FXML void handleSubmarineHoz(ActionEvent event) { selectShip(new Submarine(3), true); }
+    @FXML void handleSubmarineVer(ActionEvent event) { selectShip(new Submarine(3), false); }
 
     private void selectShip(IShip ship, boolean isHorizontal) {
         this.selectedShip = ship;
         this.selectedShip.setOrientation(isHorizontal);
     }
 
-
-    @FXML
-    void handleShowComputerBoard(ActionEvent event) {
-        // Mostrar el tablero de la computadora en el GridPane
+    // Mostrar tablero de la computadora
+    @FXML void handleShowComputerBoard(ActionEvent event) {
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
                 Button cellButton = (Button) computerGridPane.lookup("#computer_cell_" + (i + 1) + "_" + (j + 1));
-                if (game.getComputerGrid()[i][j]) {
-                    // Mostrar barco (en este caso, marcar las celdas con un color diferente o imagen)
-                    cellButton.setStyle("-fx-background-color: #FF0000;"); // Rojo para los barcos
-                } else {
-                    cellButton.setStyle("-fx-background-color: #1D3557;"); // Azul para agua
-                }
+                cellButton.setStyle(game.getComputerGrid()[i][j] ? "-fx-background-color: #FF0000;" : "-fx-background-color: #1D3557;");
             }
         }
-        showComputerBoardButton.setDisable(true); // Deshabilitar el botón después de mostrar el tablero
+        showComputerBoardButton.setDisable(true);
     }
+
+    // Verificación de fin de juego
     public boolean checkGameOver() {
-        // Verificar si todos los barcos de la computadora han sido hundidos
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
-                if (game.getComputerGrid()[i][j]) {
-                    return false;  // Si hay algún barco restante, el juego sigue
+                if (game.getComputerGrid()[i][j]) return false;
+            }
+        }
+        return true;
+    }
+
+    @FXML
+    private void handleSaveGame() throws IOException {
+        try {
+            // Guardar el estado actual del juego
+            gameAdapter.saveState(game.getCurrentState());
+            game.saveGame("battleship_save.dat");
+            showAlert("Juego guardado", "El juego se ha guardado correctamente.");
+        } catch (IOException e) {
+            showAlert("Error", "No se pudo guardar el juego: " + e.getMessage());
+        }
+    }
+
+
+    @FXML
+    private void handleLoadGame() {
+        try {
+            game.loadGame("battleship_save.dat");
+            GameState loadedState = game.getCurrentState();
+
+            // Restaurar el estado del adaptador
+            gameAdapter.loadState(loadedState);
+
+            // Actualizar la interfaz gráfica
+            updateGridsFromLoadedGame();
+
+            // Habilitar/deshabilitar el tablero de la computadora según el estado del juego
+            disableComputerBoard(!loadedState.isGameInProgress());
+
+            // Habilitar/deshabilitar botones según el estado
+            playButton.setDisable(loadedState.isGameInProgress());
+            showComputerBoardButton.setDisable(false);
+
+            // Restaurar el estado de los botones de barcos
+            updateShipButtonsFromState(loadedState);
+
+            showAlert("Juego cargado", "El juego se ha cargado correctamente.");
+        } catch (IOException | ClassNotFoundException e) {
+            showAlert("Error", "No se pudo cargar el juego: " + e.getMessage());
+        }
+    }
+
+
+    private void updateGridsFromLoadedGame() {
+        GameState state = game.getCurrentState();
+        boolean[][] userGrid = game.getUserGrid();
+        int[][] computerShots = gameAdapter.getComputerShots();
+        int[][] playerShots = gameAdapter.getPlayerShots();
+
+        // Actualizar tablero del usuario y recrear las figuras de los barcos
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                String cellId = "user_cell_" + (i+1) + "_" + (j+1);
+                Button button = (Button) userGridPane.lookup("#" + cellId);
+                StackPane stack = (StackPane) button.getParent();
+
+                if (button != null) {
+                    if (userGrid[i][j]) {
+                        button.setStyle("-fx-background-color: #1D3557;");
+                        button.setDisable(true);
+
+                        // Verificar si este es el inicio de un barco
+                        if (isShipStart(userGrid, i, j)) {
+                            // Determinar el tipo y orientación del barco
+                            ShipInfo shipInfo = determineShipType(userGrid, i, j);
+                            if (shipInfo != null) {
+                                // Crear y agregar la figura del barco
+                                IShip ship = createShip(shipInfo.size);
+                                ship.setOrientation(shipInfo.horizontal);
+                                Group shipGroup = ship.createShipShape(0, 0, shipInfo.horizontal);
+                                stack.getChildren().add(shipGroup);
+                            }
+                        }
+                    }
+
+                    // Mostrar disparos de la computadora
+                    if (computerShots[i][j] > 0) {
+                        if (userGrid[i][j]) {
+                            button.setStyle("-fx-background-color: #FF4444;");
+                            button.setText("H");
+                        } else {
+                            button.setStyle("-fx-background-color: #87CEEB;");
+                            button.setText("X");
+                        }
+                    }
                 }
             }
         }
-        return true;  // Si no hay barcos restantes, el jugador ha ganado
+
+        // Actualizar tablero de la computadora (código existente)
+        // ... resto del método se mantiene igual
     }
-    @FXML
-    void handlePlay(ActionEvent event) {
-        gameTurnAdapter.handlePlay();
+
+    // Clase auxiliar para almacenar información del barco
+    private static class ShipInfo {
+        int size;
+        boolean horizontal;
+
+        ShipInfo(int size, boolean horizontal) {
+            this.size = size;
+            this.horizontal = horizontal;
+        }
+    }
+
+    // Método para crear el tipo de barco correspondiente
+    private IShip createShip(int size) {
+        switch (size) {
+            case 4: return new CarrierShip(4);
+            case 3: return new Submarine(3);
+            case 2: return new Destroyer(2);
+            case 1: return new Frigate(1);
+            default: return null;
+        }
+    }
+
+    // Método para verificar si una celda es el inicio de un barco
+    private boolean isShipStart(boolean[][] grid, int row, int col) {
+        // Verificar si hay un barco en la celda actual
+        if (!grid[row][col]) return false;
+
+        // Verificar si es el inicio (no hay barco a la izquierda ni arriba)
+        boolean noShipLeft = col == 0 || !grid[row][col-1];
+        boolean noShipUp = row == 0 || !grid[row-1][col];
+
+        return noShipLeft && noShipUp;
+    }
+
+    // Método para determinar el tipo y orientación del barco
+    private ShipInfo determineShipType(boolean[][] grid, int startRow, int startCol) {
+        // Verificar horizontalmente
+        int horizontalSize = 0;
+        for (int j = startCol; j < 10 && grid[startRow][j]; j++) {
+            horizontalSize++;
+        }
+
+        // Verificar verticalmente
+        int verticalSize = 0;
+        for (int i = startRow; i < 10 && grid[i][startCol]; i++) {
+            verticalSize++;
+        }
+
+        // Determinar la orientación y tamaño del barco
+        if (horizontalSize > verticalSize) {
+            return new ShipInfo(horizontalSize, true);
+        } else if (verticalSize > horizontalSize) {
+            return new ShipInfo(verticalSize, false);
+        } else {
+            // Si son iguales (caso de barco de tamaño 1)
+            return new ShipInfo(1, true);
+        }
+    }
+
+    private void updateShipButtonsFromState(GameState state) {
+        carrierIdHoz.setDisable(state.isShipPlaced("carrier"));
+        carrierIdVer.setDisable(state.isShipPlaced("carrier"));
+        destroyerId1Hoz.setDisable(state.isShipPlaced("destroyer"));
+        destroyerIdVer.setDisable(state.isShipPlaced("destroyer"));
+        submarineIdHoz.setDisable(state.isShipPlaced("submarine"));
+        submarineIdVer.setDisable(state.isShipPlaced("submarine"));
+        frigateId1Ver.setDisable(state.isShipPlaced("frigate"));
+        frigateIdVer.setDisable(state.isShipPlaced("frigate"));
+    }
+    private void showAlert(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 
 

@@ -76,3 +76,16 @@
     -fx-font-size: 14px;
     -fx-padding: 5px;
 }
+
+
+.grid-cell-hit {
+    -fx-background-color: #FF4444;
+}
+
+.grid-cell-miss {
+    -fx-background-color: #87CEEB;
+}
+
+.grid-cell-sunk {
+    -fx-background-color: #8B0000;
+}
