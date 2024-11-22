@@ -87,19 +87,22 @@ public class GameController {
         int result = gameAdapter.playerShoot(coords[0], coords[1]);
 
         Button cellButton = (Button) computerGridPane.lookup("#" + cellId);
+        StackPane cellStack = (StackPane) cellButton.getParent();
 
-        if (result != -1) {  // Solo procesar si el disparo fue válido
+        if (result != -1) {
+            cellStack.getChildren().clear();
+            cellStack.getChildren().add(cellButton);
+
             switch (result) {
                 case GameTurnAdapter.WATER:
-                    cellButton.setStyle("-fx-background-color: #87CEEB;");  // Azul claro para agua
-                    cellButton.setText("X");
+                    cellButton.setStyle("-fx-background-color: #87CEEB;");
+                    cellStack.getChildren().add(new WaterMarker());
                     break;
                 case GameTurnAdapter.HIT:
-                    cellButton.setStyle("-fx-background-color: #FF4444;");  // Rojo para hit
-                    cellButton.setText("H");
+                    cellButton.setStyle("-fx-background-color: #FF4444;");
+                    cellStack.getChildren().add(new HitMarker());
                     break;
                 case GameTurnAdapter.SUNK:
-                    // Marcar todo el barco como hundido
                     markSunkShip(coords[0], coords[1], computerGridPane);
                     break;
             }
@@ -107,21 +110,23 @@ public class GameController {
             if (gameAdapter.isGameOver()) {
                 showGameOverDialog(gameAdapter.getWinner());
             } else {
-                // Siempre ejecutar el turno de la computadora después del jugador
                 handleComputerTurn();
             }
         }
     }
+
     private void markSunkShip(int row, int col, GridPane gridPane) {
-        // Marcar la celda actual
         String currentCellId = String.format("computer_cell_%d_%d", row, col);
         Button currentButton = (Button) gridPane.lookup("#" + currentCellId);
         if (currentButton != null) {
-            currentButton.setStyle("-fx-background-color: #8B0000;");  // Rojo oscuro para hundido
-            currentButton.setText("S");
+            StackPane cellStack = (StackPane) currentButton.getParent();
+            cellStack.getChildren().clear();
+            cellStack.getChildren().add(currentButton);
+
+            currentButton.setStyle("-fx-background-color: #8B0000;");
+            cellStack.getChildren().add(new SunkMarker());
         }
 
-        // Buscar y marcar celdas adyacentes del mismo barco
         checkAndMarkAdjacentCells(row, col, gridPane);
     }
     private void checkAndMarkAdjacentCells(int row, int col, GridPane gridPane) {
@@ -147,39 +152,46 @@ public class GameController {
 
             String cellId = String.format("computer_cell_%d_%d", currentRow, currentCol);
             Button button = (Button) gridPane.lookup("#" + cellId);
+            StackPane cellStack = button != null ? (StackPane) button.getParent() : null;
 
-            if (button == null ||
-                    !button.getStyle().contains("-fx-background-color: #FF4444")) {
+            if (button == null || !button.getStyle().contains("-fx-background-color: #FF4444")) {
                 break;
             }
 
+            cellStack.getChildren().clear();
+            cellStack.getChildren().add(button);
             button.setStyle("-fx-background-color: #8B0000;");
-            button.setText("S");
+            cellStack.getChildren().add(new SunkMarker());
         }
     }
 
-    // Nuevo método para manejar el turno de la computadora:
     private void handleComputerTurn() {
         int[] shotResult = gameAdapter.computerShoot();
         if (shotResult != null) {
             String cellId = "user_cell_" + (shotResult[0] + 1) + "_" + (shotResult[1] + 1);
             Button cellButton = (Button) userGridPane.lookup("#" + cellId);
+            StackPane cellStack = (StackPane) cellButton.getParent();
+
+            cellStack.getChildren().clear();
+            cellStack.getChildren().add(cellButton);
 
             switch (shotResult[2]) {
                 case GameTurnAdapter.WATER:
                     cellButton.setStyle("-fx-background-color: #87CEEB;");
-                    cellButton.setText("X");
+                    cellStack.getChildren().add(new WaterMarker());
                     break;
                 case GameTurnAdapter.HIT:
                     cellButton.setStyle("-fx-background-color: #FF4444;");
-                    // La computadora dispara de nuevo si acierta
-                    handleComputerTurn();
+                    cellStack.getChildren().add(new HitMarker());
                     break;
                 case GameTurnAdapter.SUNK:
                     cellButton.setStyle("-fx-background-color: #8B0000;");
-                    // La computadora dispara de nuevo si hunde un barco
-                    handleComputerTurn();
+                    cellStack.getChildren().add(new SunkMarker());
                     break;
+            }
+
+            if (gameAdapter.isGameOver()) {
+                showGameOverDialog(gameAdapter.getWinner());
             }
         }
     }
@@ -297,7 +309,23 @@ public class GameController {
 
             if (selectedCells != null && areCellsValid(selectedCells, "user")) {
                 game.placeShip(cellId, shipSize, isHorizontal);  // Actualizar el modelo
-                placeShip(selectedCells, stackPane);  // Actualizar la vista
+
+                // Deshabilitar todas las celdas del barco
+                for (String pos : selectedCells) {
+                    Button targetCell = (Button) userGridPane.lookup("#" + pos);
+                    StackPane targetStack = (StackPane) targetCell.getParent();
+                    if (targetCell != null) {
+                        targetCell.setStyle("-fx-background-color: #1D3557;");
+                        targetCell.setDisable(true);
+
+                        // Solo agregar la figura del barco en la primera celda
+                        if (pos.equals(selectedCells.get(0))) {
+                            Group shipGroup = selectedShip.createShipShape(0, 0, isHorizontal);
+                            targetStack.getChildren().add(shipGroup);
+                        }
+                    }
+                }
+
                 updateShipCounter(selectedShip);
                 selectedShip = null;
                 checkIfAllShipsPlaced();
@@ -307,7 +335,7 @@ public class GameController {
             alert.setTitle("Posición inválida");
             alert.setContentText(e.getMessage());
             alert.showAndWait();
-        }catch (InvalidPlacementOnComputerBoardException e){
+        } catch (InvalidPlacementOnComputerBoardException e) {
             System.out.println(e.getMessage());
         }
     }
@@ -348,11 +376,15 @@ public class GameController {
         int startRow = coords[0];
         int startCol = coords[1];
 
+        // Verificar límites del tablero antes de agregar celdas
+        if (isHorizontal && startCol + size - 1 > 10) return null;
+        if (!isHorizontal && startRow + size - 1 > 10) return null;
+
         for (int i = 0; i < size; i++) {
             int row = isHorizontal ? startRow : startRow + i;
             int col = isHorizontal ? startCol + i : startCol;
 
-            // Verificar límites del tablero (ahora usando 1-10 en lugar de 0-9)
+            // Verificar que cada celda esté dentro de los límites
             if (row < 1 || row > 10 || col < 1 || col > 10) {
                 return null;
             }

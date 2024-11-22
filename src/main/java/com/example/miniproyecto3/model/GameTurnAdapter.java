@@ -30,32 +30,45 @@ public class GameTurnAdapter implements Serializable {
     }
 
     public int playerShoot(int row, int col) {
-        if (gameOver || playerShots[row-1][col-1] != 0) {
+        // Validar que sea el turno del jugador y la posición sea válida
+        if (gameOver || !isPlayerTurn) {
+            return -1;
+        }
+
+        // Ajustar índices (restar 1 para convertir de 1-based a 0-based)
+        row--;
+        col--;
+
+        // Verificar si ya se disparó en esta posición
+        if (playerShots[row][col] != 0) {
             return -1;
         }
 
         boolean[][] computerGrid = game.getComputerGrid();
         int result;
 
-        if (computerGrid[row-1][col-1]) {
-            playerShots[row-1][col-1] = HIT;
+        if (computerGrid[row][col]) {
+            playerShots[row][col] = HIT;
             playerHitCount++;
-            result = checkIfSunk(row-1, col-1, computerGrid, playerShots) ? SUNK : HIT;
+            result = checkIfSunk(row, col, computerGrid, playerShots) ? SUNK : HIT;
 
             if (playerHitCount >= TOTAL_SHIP_CELLS) {
                 gameOver = true;
                 winner = "¡Jugador";
             }
         } else {
-            playerShots[row-1][col-1] = WATER;
+            playerShots[row][col] = WATER;
             result = WATER;
+            // Solo cambiar el turno si fue agua
+            isPlayerTurn = false;
         }
 
         return result;
     }
 
+
     public int[] computerShoot() {
-        if (gameOver) {
+        if (gameOver || isPlayerTurn) {
             return null;
         }
 
@@ -82,6 +95,8 @@ public class GameTurnAdapter implements Serializable {
         } else {
             computerShots[row][col] = WATER;
             result = new int[]{row, col, WATER};
+            // Solo cambiar el turno si fue agua
+            isPlayerTurn = true;
         }
 
         return result;
@@ -196,19 +211,22 @@ public class GameTurnAdapter implements Serializable {
 
     private void markShipAsSunk(int row, int col, boolean[][] grid, int[][] shots) {
         // Marcar horizontal
+        boolean isHorizontal = false;
         int left = col;
         while (left >= 0 && grid[row][left]) {
             shots[row][left] = SUNK;
             left--;
+            isHorizontal = true;
         }
         int right = col + 1;
         while (right < 10 && grid[row][right]) {
             shots[row][right] = SUNK;
             right++;
+            isHorizontal = true;
         }
 
-        // Si no hay barco horizontal, marcar vertical
-        if (left == col - 1 && right == col + 1) {
+        // Si no es horizontal, marcar vertical
+        if (!isHorizontal) {
             int up = row;
             while (up >= 0 && grid[up][col]) {
                 shots[up][col] = SUNK;
