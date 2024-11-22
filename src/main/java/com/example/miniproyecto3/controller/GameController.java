@@ -6,7 +6,6 @@ import com.example.miniproyecto3.model.GameTurnAdapter;
 import com.example.miniproyecto3.model.exceptions.InvalidPlacementException;
 import com.example.miniproyecto3.model.exceptions.InvalidPlacementOnComputerBoardException;
 import com.example.miniproyecto3.model.figures2d.*;
-import com.example.miniproyecto3.view.GameStage;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Group;
@@ -39,22 +38,39 @@ public class GameController {
         setupGrid(computerGridPane, "computer");
         playButton.setDisable(true);
         gameAdapter = new GameTurnAdapter(game);
+        disableComputerBoard(true);
+    }
+
+    private void disableComputerBoard(boolean disable) {
+        for (int i = 1; i <= 10; i++) {
+            for (int j = 1; j <= 10; j++) {
+                Button cellButton = (Button) computerGridPane.lookup("#computer_cell_" + i + "_" + j);
+                if (cellButton != null) {
+                    cellButton.setDisable(disable);
+                }
+            }
+        }
     }
 
 
     @FXML
     private void handleRestart(ActionEvent event) {
         resetGame();
-        gameAdapter = new GameTurnAdapter(game); // Crear nuevo adaptador
+        gameAdapter = new GameTurnAdapter(game);
         playButton.setDisable(true);
         showComputerBoardButton.setDisable(false);
+        disableComputerBoard(true); // Desactivar el tablero al reiniciar
     }
 
 
     @FXML void handlePlay(ActionEvent event) {
+        disableComputerBoard(false); // Habilitar el tablero
         enableComputerBoardClicks();
         playButton.setDisable(true);
+        // Actualizar el estado del juego
+        game.getCurrentState().setGameInProgress(true);
     }
+
     private void enableComputerBoardClicks() {
         for (int i = 1; i <= 10; i++) {
             for (int j = 1; j <= 10; j++) {
@@ -221,6 +237,7 @@ public class GameController {
 
                     if (player.equals("computer")) {
                         cellButton.setOnAction(event -> handleShot(cellId));
+                        cellButton.setDisable(true);
                     } else {
                         cellButton.setOnAction(event -> handleCellClick(cellId, cellButton, stack));
                     }
@@ -405,26 +422,28 @@ public class GameController {
         }
     }
 
+
     @FXML
     private void handleLoadGame() {
         try {
             game.loadGame("battleship_save.dat");
             GameState loadedState = game.getCurrentState();
 
-            if (loadedState.isGameInProgress()) {
-                // Restaurar el estado del adaptador
-                gameAdapter.loadState(loadedState);
+            // Restaurar el estado del adaptador
+            gameAdapter.loadState(loadedState);
 
-                // Actualizar la interfaz gráfica
-                updateGridsFromLoadedGame();
+            // Actualizar la interfaz gráfica
+            updateGridsFromLoadedGame();
 
-                // Habilitar/deshabilitar botones según el estado
-                playButton.setDisable(!loadedState.isGameInProgress());
-                showComputerBoardButton.setDisable(false);
+            // Habilitar/deshabilitar el tablero de la computadora según el estado del juego
+            disableComputerBoard(!loadedState.isGameInProgress());
 
-                // Restaurar el estado de los botones de barcos
-                updateShipButtonsFromState(loadedState);
-            }
+            // Habilitar/deshabilitar botones según el estado
+            playButton.setDisable(loadedState.isGameInProgress());
+            showComputerBoardButton.setDisable(false);
+
+            // Restaurar el estado de los botones de barcos
+            updateShipButtonsFromState(loadedState);
 
             showAlert("Juego cargado", "El juego se ha cargado correctamente.");
         } catch (IOException | ClassNotFoundException e) {
