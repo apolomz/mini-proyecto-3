@@ -19,21 +19,42 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * JHOAN FERNANDEZ - DANIEL CARDENAS
+ * Controller class for managing a Battleship game interface.
+ * Handles game logic, user interactions, and view updates.
+ */
 public class GameController {
+    /** Currently selected ship for placement */
     private IShip selectedShip;
+
+    /** Main game model instance */
     private final Game game = new Game();
+
+    /** Adapter for managing game turns */
     private GameTurnAdapter gameAdapter;
 
+    /** Counters for tracking ship placements */
     private int carrierCount = 0, destroyerCount = 0, frigateCount = 0, submarineCount = 0;
 
+    // FXML Injected Components
+
+    /** Ship placement buttons for different types and orientations */
     @FXML private Button carrierIdHoz, carrierIdVer, destroyerId1Hoz, destroyerIdVer,
-            frigateId1Ver, frigateIdVer, submarineIdHoz, submarineIdVer,
-            playButton, showComputerBoardButton, loadGameButton, saveGameButton;
+            frigateId1Ver, frigateIdVer, submarineIdHoz, submarineIdVer;
+
+    /** Game control buttons */
+    @FXML private Button playButton, showComputerBoardButton, loadGameButton, saveGameButton;
+
+    /** Game boards for user and computer */
     @FXML private GridPane userGridPane, computerGridPane;
 
-    // Inicialización y configuración de la vista
+    /**
+     * Initializes the game controller and sets up the initial game state.
+     * This method is automatically called by JavaFX after FXML loading.
+     */
     public void initialize() {
-        System.out.println("Controlador juego cargado");
+        System.out.println("Game controller loaded");
         setupGrid(userGridPane, "user");
         setupGrid(computerGridPane, "computer");
         playButton.setDisable(true);
@@ -41,6 +62,10 @@ public class GameController {
         disableComputerBoard(true);
     }
 
+    /**
+     * Enables or disables all cells in the computer's board.
+     * @param disable true to disable the board, false to enable it
+     */
     private void disableComputerBoard(boolean disable) {
         for (int i = 1; i <= 10; i++) {
             for (int j = 1; j <= 10; j++) {
@@ -52,25 +77,36 @@ public class GameController {
         }
     }
 
-
+    /**
+     * Handles the restart game action.
+     * Resets both boards and game state to initial conditions.
+     * @param event The action event triggered by the restart button
+     */
     @FXML
     private void handleRestart(ActionEvent event) {
         resetGame();
         gameAdapter = new GameTurnAdapter(game);
         playButton.setDisable(true);
         showComputerBoardButton.setDisable(false);
-        disableComputerBoard(true); // Desactivar el tablero al reiniciar
+        disableComputerBoard(true);
     }
 
-
-    @FXML void handlePlay(ActionEvent event) {
-        disableComputerBoard(false); // Habilitar el tablero
+    /**
+     * Handles the play button action.
+     * Enables the computer board and starts the game.
+     * @param event The action event triggered by the play button
+     */
+    @FXML
+    private void handlePlay(ActionEvent event) {
+        disableComputerBoard(false);
         enableComputerBoardClicks();
         playButton.setDisable(true);
-        // Actualizar el estado del juego
         game.getCurrentState().setGameInProgress(true);
     }
 
+    /**
+     * Enables click events on all cells of the computer's board.
+     */
     private void enableComputerBoardClicks() {
         for (int i = 1; i <= 10; i++) {
             for (int j = 1; j <= 10; j++) {
@@ -82,24 +118,32 @@ public class GameController {
         }
     }
 
+    /**
+     * Processes a shot at a specific cell on the computer's board.
+     * Updates the visual state and handles the result of the shot.
+     * @param cellId The ID of the cell that was shot at
+     */
     private void handleShot(String cellId) {
         int[] coords = game.parseCellId(cellId);
         int result = gameAdapter.playerShoot(coords[0], coords[1]);
 
         Button cellButton = (Button) computerGridPane.lookup("#" + cellId);
+        StackPane cellStack = (StackPane) cellButton.getParent();
 
-        if (result != -1) {  // Solo procesar si el disparo fue válido
+        if (result != -1) {
+            cellStack.getChildren().clear();
+            cellStack.getChildren().add(cellButton);
+
             switch (result) {
                 case GameTurnAdapter.WATER:
-                    cellButton.setStyle("-fx-background-color: #87CEEB;");  // Azul claro para agua
-                    cellButton.setText("X");
+                    cellButton.setStyle("-fx-background-color: #87CEEB;");
+                    cellStack.getChildren().add(new WaterMarker());
                     break;
                 case GameTurnAdapter.HIT:
-                    cellButton.setStyle("-fx-background-color: #FF4444;");  // Rojo para hit
-                    cellButton.setText("H");
+                    cellButton.setStyle("-fx-background-color: #FF4444;");
+                    cellStack.getChildren().add(new HitMarker());
                     break;
                 case GameTurnAdapter.SUNK:
-                    // Marcar todo el barco como hundido
                     markSunkShip(coords[0], coords[1], computerGridPane);
                     break;
             }
@@ -107,32 +151,53 @@ public class GameController {
             if (gameAdapter.isGameOver()) {
                 showGameOverDialog(gameAdapter.getWinner());
             } else {
-                // Siempre ejecutar el turno de la computadora después del jugador
                 handleComputerTurn();
             }
         }
     }
+
+    /**
+     * Marks a ship as sunk on the board and updates adjacent cells.
+     * @param row Row coordinate of the sunk ship
+     * @param col Column coordinate of the sunk ship
+     * @param gridPane The grid pane containing the board
+     */
     private void markSunkShip(int row, int col, GridPane gridPane) {
-        // Marcar la celda actual
         String currentCellId = String.format("computer_cell_%d_%d", row, col);
         Button currentButton = (Button) gridPane.lookup("#" + currentCellId);
         if (currentButton != null) {
-            currentButton.setStyle("-fx-background-color: #8B0000;");  // Rojo oscuro para hundido
-            currentButton.setText("S");
+            StackPane cellStack = (StackPane) currentButton.getParent();
+            cellStack.getChildren().clear();
+            cellStack.getChildren().add(currentButton);
+
+            currentButton.setStyle("-fx-background-color: #8B0000;");
+            cellStack.getChildren().add(new SunkMarker());
         }
 
-        // Buscar y marcar celdas adyacentes del mismo barco
         checkAndMarkAdjacentCells(row, col, gridPane);
     }
-    private void checkAndMarkAdjacentCells(int row, int col, GridPane gridPane) {
-        // Verificar horizontal
-        markDirection(row, col, 0, 1, gridPane);  // Derecha
-        markDirection(row, col, 0, -1, gridPane); // Izquierda
 
-        // Verificar vertical
-        markDirection(row, col, 1, 0, gridPane);  // Abajo
-        markDirection(row, col, -1, 0, gridPane); // Arriba
+    /**
+     * Checks and marks adjacent cells of a sunk ship.
+     * @param row Starting row coordinate
+     * @param col Starting column coordinate
+     * @param gridPane The grid pane containing the board
+     */
+    private void checkAndMarkAdjacentCells(int row, int col, GridPane gridPane) {
+        markDirection(row, col, 0, 1, gridPane);  // Right
+        markDirection(row, col, 0, -1, gridPane); // Left
+        markDirection(row, col, 1, 0, gridPane);  // Down
+        markDirection(row, col, -1, 0, gridPane); // Up
     }
+
+    /**
+     * Marks cells in a specific direction from a starting point.
+     * @param row Starting row coordinate
+     * @param col Starting column coordinate
+     * @param rowDelta Row direction (-1, 0, or 1)
+     * @param colDelta Column direction (-1, 0, or 1)
+     * @param gridPane The grid pane containing the board
+     */
     private void markDirection(int row, int col, int rowDelta, int colDelta, GridPane gridPane) {
         int currentRow = row;
         int currentCol = col;
@@ -147,52 +212,70 @@ public class GameController {
 
             String cellId = String.format("computer_cell_%d_%d", currentRow, currentCol);
             Button button = (Button) gridPane.lookup("#" + cellId);
+            StackPane cellStack = button != null ? (StackPane) button.getParent() : null;
 
-            if (button == null ||
-                    !button.getStyle().contains("-fx-background-color: #FF4444")) {
+            if (button == null || !button.getStyle().contains("-fx-background-color: #FF4444")) {
                 break;
             }
 
+            cellStack.getChildren().clear();
+            cellStack.getChildren().add(button);
             button.setStyle("-fx-background-color: #8B0000;");
-            button.setText("S");
+            cellStack.getChildren().add(new SunkMarker());
         }
     }
 
-    // Nuevo método para manejar el turno de la computadora:
+    /**
+     * Processes the computer's turn.
+     * Updates the user's board based on the computer's shot.
+     */
     private void handleComputerTurn() {
         int[] shotResult = gameAdapter.computerShoot();
         if (shotResult != null) {
             String cellId = "user_cell_" + (shotResult[0] + 1) + "_" + (shotResult[1] + 1);
             Button cellButton = (Button) userGridPane.lookup("#" + cellId);
+            StackPane cellStack = (StackPane) cellButton.getParent();
+
+            cellStack.getChildren().clear();
+            cellStack.getChildren().add(cellButton);
 
             switch (shotResult[2]) {
                 case GameTurnAdapter.WATER:
                     cellButton.setStyle("-fx-background-color: #87CEEB;");
-                    cellButton.setText("X");
+                    cellStack.getChildren().add(new WaterMarker());
                     break;
                 case GameTurnAdapter.HIT:
                     cellButton.setStyle("-fx-background-color: #FF4444;");
-                    // La computadora dispara de nuevo si acierta
-                    handleComputerTurn();
+                    cellStack.getChildren().add(new HitMarker());
                     break;
                 case GameTurnAdapter.SUNK:
                     cellButton.setStyle("-fx-background-color: #8B0000;");
-                    // La computadora dispara de nuevo si hunde un barco
-                    handleComputerTurn();
+                    cellStack.getChildren().add(new SunkMarker());
                     break;
+            }
+
+            if (gameAdapter.isGameOver()) {
+                showGameOverDialog(gameAdapter.getWinner());
             }
         }
     }
 
-    // Nuevo método para mostrar el diálogo de fin de juego:
+    /**
+     * Shows the game over dialog with the winner's name.
+     * @param winner The name of the winning player
+     */
     private void showGameOverDialog(String winner) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Game Over");
-        alert.setHeaderText("¡Juego terminado!");
-        alert.setContentText(winner + " ha ganado el juego!");
+        alert.setHeaderText("Game Over!");
+        alert.setContentText(winner + " has won the game!");
         alert.showAndWait();
     }
 
+    /**
+     * Resets the game to its initial state.
+     * Clears both boards and resets all game variables.
+     */
     private void resetGame() {
         userGridPane.getChildren().clear();
         computerGridPane.getChildren().clear();
@@ -202,6 +285,9 @@ public class GameController {
         resetCountersAndButtons();
     }
 
+    /**
+     * Resets all ship counters and button states.
+     */
     private void resetCountersAndButtons() {
         carrierCount = destroyerCount = frigateCount = submarineCount = 0;
         resetShipButtons();
@@ -209,6 +295,9 @@ public class GameController {
         showComputerBoardButton.setDisable(false);
     }
 
+    /**
+     * Resets all ship placement buttons to their initial state.
+     */
     private void resetShipButtons() {
         carrierIdHoz.setDisable(false);
         carrierIdVer.setDisable(false);
@@ -220,7 +309,11 @@ public class GameController {
         frigateIdVer.setDisable(false);
     }
 
-    // Configuración de las celdas del tablero
+    /**
+     * Sets up the game grid with cells and headers.
+     * @param gridPane The grid pane to set up
+     * @param player The player identifier ("user" or "computer")
+     */
     private void setupGrid(GridPane gridPane, String player) {
         for (int i = 0; i < 11; i++) {
             for (int j = 0; j < 11; j++) {
@@ -263,8 +356,12 @@ public class GameController {
         gridPane.setVgap(0);
     }
 
-
-
+    /**
+     * Creates a header cell in the game grid.
+     * @param gridPane The grid pane where the header will be added
+     * @param i Row index for the header
+     * @param j Column index for the header
+     */
     private void createGridHeader(GridPane gridPane, int i, int j) {
         Label header = new Label();
         header.setPrefSize(30, 30);
@@ -279,7 +376,16 @@ public class GameController {
         gridPane.add(header, j, i);
     }
 
-    // Manejo de la colocación de barcos
+    /**
+     * Handles the ship placement when a cell is clicked.
+     * Validates the placement and updates both the model and UI accordingly.
+     *
+     * @param cellId The unique identifier of the clicked cell
+     * @param cellButton The button representing the clicked cell
+     * @param stackPane The stack pane containing the cell button
+     * @throws InvalidPlacementException If the ship placement is invalid
+     * @throws InvalidPlacementOnComputerBoardException If attempting to place on computer's board
+     */
     private void handleCellClick(String cellId, Button cellButton, StackPane stackPane) {
         if (selectedShip == null) {
             System.out.println("Selecciona un barco primero");
@@ -297,7 +403,23 @@ public class GameController {
 
             if (selectedCells != null && areCellsValid(selectedCells, "user")) {
                 game.placeShip(cellId, shipSize, isHorizontal);  // Actualizar el modelo
-                placeShip(selectedCells, stackPane);  // Actualizar la vista
+
+
+                for (String pos : selectedCells) {
+                    Button targetCell = (Button) userGridPane.lookup("#" + pos);
+                    StackPane targetStack = (StackPane) targetCell.getParent();
+                    if (targetCell != null) {
+                        targetCell.setStyle("-fx-background-color: #1D3557;");
+                        targetCell.setDisable(true);
+
+                        // Solo agregar la figura del barco en la primera celda
+                        if (pos.equals(selectedCells.get(0))) {
+                            Group shipGroup = selectedShip.createShipShape(0, 0, isHorizontal);
+                            targetStack.getChildren().add(shipGroup);
+                        }
+                    }
+                }
+
                 updateShipCounter(selectedShip);
                 selectedShip = null;
                 checkIfAllShipsPlaced();
@@ -307,11 +429,17 @@ public class GameController {
             alert.setTitle("Posición inválida");
             alert.setContentText(e.getMessage());
             alert.showAndWait();
-        }catch (InvalidPlacementOnComputerBoardException e){
+        } catch (InvalidPlacementOnComputerBoardException e) {
             System.out.println(e.getMessage());
         }
     }
 
+    /**
+     * Places a ship on the selected cells and updates the UI.
+     *
+     * @param selectedCells List of cell IDs where the ship will be placed
+     * @param stackPane The stack pane where the ship's visual representation will be added
+     */
     private void placeShip(List<String> selectedCells, StackPane stackPane) {
         for (String pos : selectedCells) {
             Button targetCell = (Button) userGridPane.lookup("#" + pos);
@@ -324,6 +452,11 @@ public class GameController {
         stackPane.getChildren().add(shipGroup);
     }
 
+    /**
+     * Updates the counter for placed ships and disables ship selection buttons when limit is reached.
+     *
+     * @param ship The ship that was just placed
+     */
     private void updateShipCounter(IShip ship) {
         if (ship instanceof CarrierShip && ++carrierCount >= 1) disableShipButtons(carrierIdHoz, carrierIdVer);
         if (ship instanceof Destroyer && ++destroyerCount >= 3) disableShipButtons(destroyerId1Hoz, destroyerIdVer);
@@ -331,28 +464,47 @@ public class GameController {
         if (ship instanceof Frigate && ++frigateCount >= 4) disableShipButtons(frigateId1Ver, frigateIdVer);
     }
 
+
+    /**
+     * Disables the specified ship selection buttons.
+     *
+     * @param buttons Variable number of buttons to disable
+     */
     private void disableShipButtons(Button... buttons) {
         for (Button button : buttons) button.setDisable(true);
     }
 
+    /**
+     * Checks if all ships have been placed and enables the Play button if true.
+     */
     private void checkIfAllShipsPlaced() {
         if (carrierCount >= 1 && destroyerCount >= 3 && frigateCount >= 4 && submarineCount >= 2) {
             playButton.setDisable(false);  // Habilita el botón Play cuando todos los barcos estén colocados
         }
     }
 
-    // Lógica de selección y validación de celdas
+    /**
+     * Selects cells for ship placement based on starting position and orientation.
+     *
+     * @param startCellId The cell ID where the ship starts
+     * @param size The size of the ship
+     * @param isHorizontal The orientation of the ship
+     * @return List of selected cell IDs, or null if placement is invalid
+     */
     public List<String> selectShipCells(String startCellId, int size, boolean isHorizontal) {
         List<String> selectedCells = new ArrayList<>();
         int[] coords = game.parseCellId(startCellId);
         int startRow = coords[0];
         int startCol = coords[1];
 
+        if (isHorizontal && startCol + size - 1 > 10) return null;
+        if (!isHorizontal && startRow + size - 1 > 10) return null;
+
         for (int i = 0; i < size; i++) {
             int row = isHorizontal ? startRow : startRow + i;
             int col = isHorizontal ? startCol + i : startCol;
 
-            // Verificar límites del tablero (ahora usando 1-10 en lugar de 0-9)
+
             if (row < 1 || row > 10 || col < 1 || col > 10) {
                 return null;
             }
@@ -362,8 +514,13 @@ public class GameController {
         return selectedCells;
     }
 
-
-
+    /**
+     * Validates if the selected cells are available for ship placement.
+     *
+     * @param selectedCells List of cell IDs to validate
+     * @param player The player's board being validated ("user" or "computer")
+     * @return true if all cells are valid for placement, false otherwise
+     */
     private boolean areCellsValid(List<String> selectedCells, String player) {
         for (String cellId : selectedCells) {
             Button cellButton = (Button) userGridPane.lookup("#" + cellId);
@@ -374,7 +531,10 @@ public class GameController {
         return true;
     }
 
-    // Selección de barcos
+    /**
+     * Event handlers for ship selection buttons.
+     * Each method creates and selects a specific type of ship with given orientation.
+     */
     @FXML void handleCarrierShipHoz(ActionEvent event) { selectShip(new CarrierShip(4), true); }
     @FXML void handleCarrierShipVer(ActionEvent event) { selectShip(new CarrierShip(4), false); }
     @FXML void handleDestroyerHoz(ActionEvent event) { selectShip(new Destroyer(2), true); }
@@ -384,12 +544,24 @@ public class GameController {
     @FXML void handleSubmarineHoz(ActionEvent event) { selectShip(new Submarine(3), true); }
     @FXML void handleSubmarineVer(ActionEvent event) { selectShip(new Submarine(3), false); }
 
+    /**
+     * Sets the currently selected ship and its orientation.
+     *
+     * @param ship The ship to be selected
+     * @param isHorizontal The orientation to set for the ship
+     */
     private void selectShip(IShip ship, boolean isHorizontal) {
         this.selectedShip = ship;
         this.selectedShip.setOrientation(isHorizontal);
     }
 
-    // Mostrar tablero de la computadora
+
+    /**
+     * Reveals the computer's board by showing all ship positions.
+     * Disables the show board button after revealing.
+     *
+     * @param event The action event triggering the reveal
+     */
     @FXML void handleShowComputerBoard(ActionEvent event) {
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
@@ -400,7 +572,12 @@ public class GameController {
         showComputerBoardButton.setDisable(true);
     }
 
-    // Verificación de fin de juego
+
+    /**
+     * Checks if the game is over by verifying if all computer ships have been sunk.
+     *
+     * @return true if game is over, false otherwise
+     */
     public boolean checkGameOver() {
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
@@ -410,10 +587,14 @@ public class GameController {
         return true;
     }
 
+    /**
+     * Saves the current game state to a file.
+     *
+     * @throws IOException If there's an error saving the game
+     */
     @FXML
     private void handleSaveGame() throws IOException {
         try {
-            // Guardar el estado actual del juego
             gameAdapter.saveState(game.getCurrentState());
             game.saveGame("battleship_save.dat");
             showAlert("Juego guardado", "El juego se ha guardado correctamente.");
@@ -423,26 +604,27 @@ public class GameController {
     }
 
 
+    /**
+     * Loads a saved game state from a file and updates the UI accordingly.
+     *
+     * @throws IOException If there's an error reading the save file
+     * @throws ClassNotFoundException If there's an error deserializing the game state
+     */
     @FXML
     private void handleLoadGame() {
         try {
             game.loadGame("battleship_save.dat");
             GameState loadedState = game.getCurrentState();
 
-            // Restaurar el estado del adaptador
             gameAdapter.loadState(loadedState);
 
-            // Actualizar la interfaz gráfica
             updateGridsFromLoadedGame();
 
-            // Habilitar/deshabilitar el tablero de la computadora según el estado del juego
             disableComputerBoard(!loadedState.isGameInProgress());
 
-            // Habilitar/deshabilitar botones según el estado
             playButton.setDisable(loadedState.isGameInProgress());
             showComputerBoardButton.setDisable(false);
 
-            // Restaurar el estado de los botones de barcos
             updateShipButtonsFromState(loadedState);
 
             showAlert("Juego cargado", "El juego se ha cargado correctamente.");
@@ -452,13 +634,17 @@ public class GameController {
     }
 
 
+
+    /**
+     * Updates the game grids with loaded game state data.
+     * Recreates ship positions, shot markers, and updates UI elements.
+     */
     private void updateGridsFromLoadedGame() {
         GameState state = game.getCurrentState();
         boolean[][] userGrid = game.getUserGrid();
         int[][] computerShots = gameAdapter.getComputerShots();
         int[][] playerShots = gameAdapter.getPlayerShots();
 
-        // Actualizar tablero del usuario y recrear las figuras de los barcos
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
                 String cellId = "user_cell_" + (i+1) + "_" + (j+1);
@@ -470,12 +656,12 @@ public class GameController {
                         button.setStyle("-fx-background-color: #1D3557;");
                         button.setDisable(true);
 
-                        // Verificar si este es el inicio de un barco
+
                         if (isShipStart(userGrid, i, j)) {
-                            // Determinar el tipo y orientación del barco
+
                             ShipInfo shipInfo = determineShipType(userGrid, i, j);
                             if (shipInfo != null) {
-                                // Crear y agregar la figura del barco
+
                                 IShip ship = createShip(shipInfo.size);
                                 ship.setOrientation(shipInfo.horizontal);
                                 Group shipGroup = ship.createShipShape(0, 0, shipInfo.horizontal);
@@ -484,7 +670,6 @@ public class GameController {
                         }
                     }
 
-                    // Mostrar disparos de la computadora
                     if (computerShots[i][j] > 0) {
                         if (userGrid[i][j]) {
                             button.setStyle("-fx-background-color: #FF4444;");
@@ -498,11 +683,11 @@ public class GameController {
             }
         }
 
-        // Actualizar tablero de la computadora (código existente)
-        // ... resto del método se mantiene igual
     }
 
-    // Clase auxiliar para almacenar información del barco
+    /**
+     * Helper class to store ship information during game state loading.
+     */
     private static class ShipInfo {
         int size;
         boolean horizontal;
@@ -513,7 +698,12 @@ public class GameController {
         }
     }
 
-    // Método para crear el tipo de barco correspondiente
+    /**
+     * Creates a ship instance based on the specified size.
+     *
+     * @param size The size of the ship to create
+     * @return A new ship instance of the appropriate type, or null if size is invalid
+     */
     private IShip createShip(int size) {
         switch (size) {
             case 4: return new CarrierShip(4);
@@ -524,27 +714,38 @@ public class GameController {
         }
     }
 
-    // Método para verificar si una celda es el inicio de un barco
+    /**
+     * Checks if a cell is the starting position of a ship.
+     *
+     * @param grid The game grid to check
+     * @param row The row to check
+     * @param col The column to check
+     * @return true if the cell is the start of a ship, false otherwise
+     */
     private boolean isShipStart(boolean[][] grid, int row, int col) {
-        // Verificar si hay un barco en la celda actual
+
         if (!grid[row][col]) return false;
 
-        // Verificar si es el inicio (no hay barco a la izquierda ni arriba)
         boolean noShipLeft = col == 0 || !grid[row][col-1];
         boolean noShipUp = row == 0 || !grid[row-1][col];
 
         return noShipLeft && noShipUp;
     }
 
-    // Método para determinar el tipo y orientación del barco
+    /**
+     * Creates a new ShipInfo instance.
+     *
+     * @param "size" The size of the ship
+     * @param "horizontal" The orientation of the ship
+     */
     private ShipInfo determineShipType(boolean[][] grid, int startRow, int startCol) {
-        // Verificar horizontalmente
+
         int horizontalSize = 0;
         for (int j = startCol; j < 10 && grid[startRow][j]; j++) {
             horizontalSize++;
         }
 
-        // Verificar verticalmente
+
         int verticalSize = 0;
         for (int i = startRow; i < 10 && grid[i][startCol]; i++) {
             verticalSize++;
@@ -561,6 +762,11 @@ public class GameController {
         }
     }
 
+    /**
+     * Updates ship selection buttons based on the loaded game state.
+     *
+     * @param state The loaded game state
+     */
     private void updateShipButtonsFromState(GameState state) {
         carrierIdHoz.setDisable(state.isShipPlaced("carrier"));
         carrierIdVer.setDisable(state.isShipPlaced("carrier"));
@@ -571,6 +777,13 @@ public class GameController {
         frigateId1Ver.setDisable(state.isShipPlaced("frigate"));
         frigateIdVer.setDisable(state.isShipPlaced("frigate"));
     }
+
+    /**
+     * Displays an alert dialog with the specified title and content.
+     *
+     * @param title The title of the alert dialog
+     * @param content The message to display in the alert
+     */
     private void showAlert(String title, String content) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);

@@ -1,8 +1,13 @@
 package com.example.miniproyecto3.model;
 
-
 import java.io.Serializable;
 
+/**
+ * JHOAN FERNANDEZ - DANIEL CARDENAS
+ * Adapter class that manages the game turns and shooting mechanics in the Battleship game.
+ * This class handles the logic for both player and computer shots, tracks game state,
+ * and determines when ships are sunk.
+ */
 public class GameTurnAdapter implements Serializable {
     private static final long serialVersionUID = 1L;
     private final Game game;
@@ -16,12 +21,14 @@ public class GameTurnAdapter implements Serializable {
 
     private final int[][] playerShots = new int[10][10];
     private final int[][] computerShots = new int[10][10];
-
-    // Añadimos contadores para llevar el registro de barcos hundidos
     private int playerHitCount = 0;
     private int computerHitCount = 0;
-    private static final int TOTAL_SHIP_CELLS = 20; // Total de celdas ocupadas por barcos
+    private static final int TOTAL_SHIP_CELLS = 20;
 
+    /**
+     * Constructs a new GameTurnAdapter.
+     * @param game The main game instance to adapt
+     */
     public GameTurnAdapter(Game game) {
         this.game = game;
         this.isPlayerTurn = true;
@@ -29,33 +36,51 @@ public class GameTurnAdapter implements Serializable {
         this.winner = null;
     }
 
+    /**
+     * Processes a player's shot at the specified coordinates.
+     * @param row The row coordinate (1-based indexing)
+     * @param col The column coordinate (1-based indexing)
+     * @return Result of the shot: -1 for invalid shot, WATER for miss, HIT for hit, SUNK for sinking a ship
+     */
     public int playerShoot(int row, int col) {
-        if (gameOver || playerShots[row-1][col-1] != 0) {
+        if (gameOver || !isPlayerTurn) {
+            return -1;
+        }
+
+        row--;
+        col--;
+
+        if (playerShots[row][col] != 0) {
             return -1;
         }
 
         boolean[][] computerGrid = game.getComputerGrid();
         int result;
 
-        if (computerGrid[row-1][col-1]) {
-            playerShots[row-1][col-1] = HIT;
+        if (computerGrid[row][col]) {
+            playerShots[row][col] = HIT;
             playerHitCount++;
-            result = checkIfSunk(row-1, col-1, computerGrid, playerShots) ? SUNK : HIT;
+            result = checkIfSunk(row, col, computerGrid, playerShots) ? SUNK : HIT;
 
             if (playerHitCount >= TOTAL_SHIP_CELLS) {
                 gameOver = true;
                 winner = "¡Jugador";
             }
         } else {
-            playerShots[row-1][col-1] = WATER;
+            playerShots[row][col] = WATER;
             result = WATER;
+            isPlayerTurn = false;
         }
 
         return result;
     }
 
+    /**
+     * Executes the computer's turn to shoot.
+     * @return An array containing [row, col, result] of the shot, or null if it's not computer's turn
+     */
     public int[] computerShoot() {
-        if (gameOver) {
+        if (gameOver || isPlayerTurn) {
             return null;
         }
 
@@ -82,13 +107,17 @@ public class GameTurnAdapter implements Serializable {
         } else {
             computerShots[row][col] = WATER;
             result = new int[]{row, col, WATER};
+            isPlayerTurn = true;
         }
 
         return result;
     }
 
+    /**
+     * Determines the best target for the computer's next shot.
+     * @return An array containing the [row, col] coordinates for the next shot
+     */
     private int[] findBestTarget() {
-        // Primero, buscar celdas adyacentes a hits previos
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
                 if (computerShots[i][j] == HIT) {
@@ -105,7 +134,6 @@ public class GameTurnAdapter implements Serializable {
             }
         }
 
-        // Si no hay hits previos, elegir una celda aleatoria no disparada
         int row, col;
         do {
             row = (int) (Math.random() * 10);
@@ -115,10 +143,16 @@ public class GameTurnAdapter implements Serializable {
         return new int[]{row, col};
     }
 
+    /**
+     * Validates if the given coordinates are within the game grid.
+     */
     private boolean isValidCell(int row, int col) {
         return row >= 0 && row < 10 && col >= 0 && col < 10;
     }
 
+    /**
+     * Checks if a ship has been sunk at the given coordinates.
+     */
     private boolean checkIfSunk(int row, int col, boolean[][] grid, int[][] shots) {
         int shipCells = countShipCells(row, col, grid);
         int hitCells = countHitCells(row, col, grid, shots);
@@ -130,9 +164,11 @@ public class GameTurnAdapter implements Serializable {
         return false;
     }
 
+    /**
+     * Counts the total cells occupied by a ship at the given coordinates.
+     */
     private int countShipCells(int row, int col, boolean[][] grid) {
         int count = 0;
-        // Contar horizontal
         int left = col;
         while (left >= 0 && grid[row][left]) {
             count++;
@@ -144,7 +180,6 @@ public class GameTurnAdapter implements Serializable {
             right++;
         }
 
-        // Si no hay barco horizontal, contar vertical
         if (count == 1) {
             count = 0;
             int up = row;
@@ -162,9 +197,11 @@ public class GameTurnAdapter implements Serializable {
         return count;
     }
 
+    /**
+     * Counts how many cells of a ship have been hit.
+     */
     private int countHitCells(int row, int col, boolean[][] grid, int[][] shots) {
         int count = 0;
-        // Contar hits horizontales
         int left = col;
         while (left >= 0 && grid[row][left]) {
             if (shots[row][left] >= HIT) count++;
@@ -176,7 +213,6 @@ public class GameTurnAdapter implements Serializable {
             right++;
         }
 
-        // Si no hay barco horizontal, contar vertical
         if (count <= 1) {
             count = 0;
             int up = row;
@@ -194,21 +230,25 @@ public class GameTurnAdapter implements Serializable {
         return count;
     }
 
+    /**
+     * Marks all cells of a sunk ship in the shots grid.
+     */
     private void markShipAsSunk(int row, int col, boolean[][] grid, int[][] shots) {
-        // Marcar horizontal
+        boolean isHorizontal = false;
         int left = col;
         while (left >= 0 && grid[row][left]) {
             shots[row][left] = SUNK;
             left--;
+            isHorizontal = true;
         }
         int right = col + 1;
         while (right < 10 && grid[row][right]) {
             shots[row][right] = SUNK;
             right++;
+            isHorizontal = true;
         }
 
-        // Si no hay barco horizontal, marcar vertical
-        if (left == col - 1 && right == col + 1) {
+        if (!isHorizontal) {
             int up = row;
             while (up >= 0 && grid[up][col]) {
                 shots[up][col] = SUNK;
@@ -222,25 +262,45 @@ public class GameTurnAdapter implements Serializable {
         }
     }
 
+    /**
+     * @return true if it's the player's turn
+     */
     public boolean isPlayerTurn() {
         return isPlayerTurn;
     }
 
+    /**
+     * @return true if the game has ended
+     */
     public boolean isGameOver() {
         return gameOver;
     }
 
+    /**
+     * @return The winner of the game, or null if game is not over
+     */
     public String getWinner() {
         return winner;
     }
 
+    /**
+     * @return Grid recording all player shots
+     */
     public int[][] getPlayerShots() {
         return playerShots;
     }
 
+    /**
+     * @return Grid recording all computer shots
+     */
     public int[][] getComputerShots() {
         return computerShots;
     }
+
+    /**
+     * Saves the current game state.
+     * @param state The GameState object to save to
+     */
     public void saveState(GameState state) {
         state.setPlayerShots(playerShots);
         state.setComputerShots(computerShots);
@@ -251,6 +311,11 @@ public class GameTurnAdapter implements Serializable {
         state.setGameOver(gameOver);
         state.setGameInProgress(true);
     }
+
+    /**
+     * Loads a saved game state.
+     * @param state The GameState object to load from
+     */
     public void loadState(GameState state) {
         int[][] loadedPlayerShots = state.getPlayerShots();
         int[][] loadedComputerShots = state.getComputerShots();
