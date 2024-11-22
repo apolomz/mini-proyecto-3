@@ -1,7 +1,10 @@
 package com.example.miniproyecto3.model;
 
 
-public class GameTurnAdapter {
+import java.io.Serializable;
+
+public class GameTurnAdapter implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final Game game;
     private boolean isPlayerTurn;
     private boolean gameOver;
@@ -27,7 +30,7 @@ public class GameTurnAdapter {
     }
 
     public int playerShoot(int row, int col) {
-        if (!isPlayerTurn || gameOver || playerShots[row-1][col-1] != 0) {
+        if (gameOver || playerShots[row-1][col-1] != 0) {
             return -1;
         }
 
@@ -42,27 +45,23 @@ public class GameTurnAdapter {
             if (playerHitCount >= TOTAL_SHIP_CELLS) {
                 gameOver = true;
                 winner = "¡Jugador";
-                return result;
             }
         } else {
             playerShots[row-1][col-1] = WATER;
             result = WATER;
-            isPlayerTurn = false;
         }
 
         return result;
     }
 
     public int[] computerShoot() {
-        if (isPlayerTurn || gameOver) {
+        if (gameOver) {
             return null;
         }
 
-        // Implementamos una IA más inteligente para la computadora
         int[] target = findBestTarget();
         int row = target[0];
         int col = target[1];
-
         boolean[][] userGrid = game.getUserGrid();
         int[] result;
 
@@ -71,9 +70,9 @@ public class GameTurnAdapter {
             computerHitCount++;
 
             if (checkIfSunk(row, col, userGrid, computerShots)) {
-                result = new int[]{row + 1, col + 1, SUNK};
+                result = new int[]{row, col, SUNK};
             } else {
-                result = new int[]{row + 1, col + 1, HIT};
+                result = new int[]{row, col, HIT};
             }
 
             if (computerHitCount >= TOTAL_SHIP_CELLS) {
@@ -82,8 +81,7 @@ public class GameTurnAdapter {
             }
         } else {
             computerShots[row][col] = WATER;
-            result = new int[]{row + 1, col + 1, WATER};
-            isPlayerTurn = true;
+            result = new int[]{row, col, WATER};
         }
 
         return result;
@@ -242,5 +240,30 @@ public class GameTurnAdapter {
 
     public int[][] getComputerShots() {
         return computerShots;
+    }
+    public void saveState(GameState state) {
+        state.setPlayerShots(playerShots);
+        state.setComputerShots(computerShots);
+        state.setPlayerHitCount(playerHitCount);
+        state.setComputerHitCount(computerHitCount);
+        state.setPlayerTurn(isPlayerTurn);
+        state.setWinner(winner);
+        state.setGameOver(gameOver);
+        state.setGameInProgress(true);
+    }
+    public void loadState(GameState state) {
+        int[][] loadedPlayerShots = state.getPlayerShots();
+        int[][] loadedComputerShots = state.getComputerShots();
+
+        for (int i = 0; i < 10; i++) {
+            System.arraycopy(loadedPlayerShots[i], 0, playerShots[i], 0, 10);
+            System.arraycopy(loadedComputerShots[i], 0, computerShots[i], 0, 10);
+        }
+
+        playerHitCount = state.getPlayerHitCount();
+        computerHitCount = state.getComputerHitCount();
+        isPlayerTurn = state.isPlayerTurn();
+        winner = state.getWinner();
+        gameOver = state.isGameOver();
     }
 }

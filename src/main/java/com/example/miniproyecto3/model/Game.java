@@ -3,12 +3,14 @@ package com.example.miniproyecto3.model;
 import com.example.miniproyecto3.model.exceptions.InvalidPlacementException;
 import com.example.miniproyecto3.model.figures2d.*;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
 
-public class Game implements IGame{
+public class Game implements IGame, Serializable {
 
+    private static final long serialVersionUID = 1L;
     private int turnCount = 0;
     private int carrierCount = 0;
     private int destroyerCount = 0;
@@ -18,9 +20,38 @@ public class Game implements IGame{
     private final List<IShip> userShips = new ArrayList<>();
     private final boolean[][] userGrid = new boolean[10][10];
     private final boolean[][] computerGrid = new boolean[10][10];
+    private GameState currentState;
 
     public Game() {
         initializeComputerGrid();
+        this.currentState = new GameState();
+    }
+
+    public GameState getCurrentState() {
+        return currentState;
+    }
+
+    public void saveGame(String fileName) throws IOException {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(fileName))) {
+            currentState.setUserGrid(userGrid);
+            currentState.setComputerGrid(computerGrid);
+            oos.writeObject(currentState);
+        }
+    }
+
+    public void loadGame(String fileName) throws IOException, ClassNotFoundException {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fileName))) {
+            GameState loadedState = (GameState) ois.readObject();
+            boolean[][] loadedUserGrid = loadedState.getUserGrid();
+            boolean[][] loadedComputerGrid = loadedState.getComputerGrid();
+
+            // Copiar los estados cargados
+            for (int i = 0; i < 10; i++) {
+                System.arraycopy(loadedUserGrid[i], 0, userGrid[i], 0, 10);
+                System.arraycopy(loadedComputerGrid[i], 0, computerGrid[i], 0, 10);
+            }
+            this.currentState = loadedState;
+        }
     }
 
     public boolean[][] getComputerGrid() {
@@ -50,8 +81,8 @@ public class Game implements IGame{
     public void resetGame(){
         clearGrid(userGrid);
         clearGrid(computerGrid);
-        userShips.clear();
         initializeComputerGrid();
+        this.currentState = new GameState();
     }
 
     @Override

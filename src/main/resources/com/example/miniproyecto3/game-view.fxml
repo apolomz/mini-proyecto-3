@@ -113,12 +113,13 @@
       </VBox>
    </right>
    <bottom>
-      <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="100.0" styleClass="vbox-right" stylesheets="@Css/styles.css" BorderPane.alignment="CENTER">
+      <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="50.0" styleClass="vbox-right" stylesheets="@Css/styles.css" BorderPane.alignment="CENTER">
          <children>
             <Button fx:id="playButton" disable="true" mnemonicParsing="false" onAction="#handlePlay" text="COMENZAR" />
-            <Button mnemonicParsing="false" onAction="#handleRestart" styleClass="button-style" stylesheets="@Css/styles.css" text="REINICIAR" />
-            <Button mnemonicParsing="false" onAction="#handleExit" styleClass="button-style" stylesheets="@Css/styles.css" text="SALIR" />
+            <Button mnemonicParsing="false" onAction="#handleRestart" prefHeight="46.0" prefWidth="114.0" styleClass="button-style" stylesheets="@Css/styles.css" text="REINICIAR" />
             <Button fx:id="showComputerBoardButton" mnemonicParsing="false" onAction="#handleShowComputerBoard" text="VISUALIZAR" />
+            <Button fx:id="saveGameButton" mnemonicParsing="false" onAction="#handleSaveGame" text="GUARDAR" />
+            <Button fx:id="loadGameButton" mnemonicParsing="false" onAction="#handleLoadGame" text="CARGAR" />
          </children>
       </HBox>
    </bottom>

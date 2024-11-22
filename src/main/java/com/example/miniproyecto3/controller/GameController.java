@@ -1,6 +1,7 @@
 package com.example.miniproyecto3.controller;
 
 import com.example.miniproyecto3.model.Game;
+import com.example.miniproyecto3.model.GameState;
 import com.example.miniproyecto3.model.GameTurnAdapter;
 import com.example.miniproyecto3.model.exceptions.InvalidPlacementException;
 import com.example.miniproyecto3.model.exceptions.InvalidPlacementOnComputerBoardException;
@@ -15,6 +16,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +29,7 @@ public class GameController {
 
     @FXML private Button carrierIdHoz, carrierIdVer, destroyerId1Hoz, destroyerIdVer,
             frigateId1Ver, frigateIdVer, submarineIdHoz, submarineIdVer,
-            playButton, showComputerBoardButton;
+            playButton, showComputerBoardButton, loadGameButton, saveGameButton;
     @FXML private GridPane userGridPane, computerGridPane;
 
     // Inicialización y configuración de la vista
@@ -39,9 +41,16 @@ public class GameController {
         gameAdapter = new GameTurnAdapter(game);
     }
 
-    // Métodos de control de la partida
-    @FXML void handleExit(ActionEvent event) { GameStage.deleteInstance(); }
-    @FXML void handleRestart(ActionEvent event) { resetGame(); }
+
+    @FXML
+    private void handleRestart(ActionEvent event) {
+        resetGame();
+        gameAdapter = new GameTurnAdapter(game); // Crear nuevo adaptador
+        playButton.setDisable(true);
+        showComputerBoardButton.setDisable(false);
+    }
+
+
     @FXML void handlePlay(ActionEvent event) {
         enableComputerBoardClicks();
         playButton.setDisable(true);
@@ -68,7 +77,6 @@ public class GameController {
                 case GameTurnAdapter.WATER:
                     cellButton.setStyle("-fx-background-color: #87CEEB;");  // Azul claro para agua
                     cellButton.setText("X");
-                    handleComputerTurn();
                     break;
                 case GameTurnAdapter.HIT:
                     cellButton.setStyle("-fx-background-color: #FF4444;");  // Rojo para hit
@@ -82,6 +90,9 @@ public class GameController {
 
             if (gameAdapter.isGameOver()) {
                 showGameOverDialog(gameAdapter.getWinner());
+            } else {
+                // Siempre ejecutar el turno de la computadora después del jugador
+                handleComputerTurn();
             }
         }
     }
@@ -381,4 +392,172 @@ public class GameController {
         }
         return true;
     }
+
+    @FXML
+    private void handleSaveGame() throws IOException {
+        try {
+            // Guardar el estado actual del juego
+            gameAdapter.saveState(game.getCurrentState());
+            game.saveGame("battleship_save.dat");
+            showAlert("Juego guardado", "El juego se ha guardado correctamente.");
+        } catch (IOException e) {
+            showAlert("Error", "No se pudo guardar el juego: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleLoadGame() {
+        try {
+            game.loadGame("battleship_save.dat");
+            GameState loadedState = game.getCurrentState();
+
+            if (loadedState.isGameInProgress()) {
+                // Restaurar el estado del adaptador
+                gameAdapter.loadState(loadedState);
+
+                // Actualizar la interfaz gráfica
+                updateGridsFromLoadedGame();
+
+                // Habilitar/deshabilitar botones según el estado
+                playButton.setDisable(!loadedState.isGameInProgress());
+                showComputerBoardButton.setDisable(false);
+
+                // Restaurar el estado de los botones de barcos
+                updateShipButtonsFromState(loadedState);
+            }
+
+            showAlert("Juego cargado", "El juego se ha cargado correctamente.");
+        } catch (IOException | ClassNotFoundException e) {
+            showAlert("Error", "No se pudo cargar el juego: " + e.getMessage());
+        }
+    }
+
+
+    private void updateGridsFromLoadedGame() {
+        GameState state = game.getCurrentState();
+        boolean[][] userGrid = game.getUserGrid();
+        int[][] computerShots = gameAdapter.getComputerShots();
+        int[][] playerShots = gameAdapter.getPlayerShots();
+
+        // Actualizar tablero del usuario y recrear las figuras de los barcos
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                String cellId = "user_cell_" + (i+1) + "_" + (j+1);
+                Button button = (Button) userGridPane.lookup("#" + cellId);
+                StackPane stack = (StackPane) button.getParent();
+
+                if (button != null) {
+                    if (userGrid[i][j]) {
+                        button.setStyle("-fx-background-color: #1D3557;");
+                        button.setDisable(true);
+
+                        // Verificar si este es el inicio de un barco
+                        if (isShipStart(userGrid, i, j)) {
+                            // Determinar el tipo y orientación del barco
+                            ShipInfo shipInfo = determineShipType(userGrid, i, j);
+                            if (shipInfo != null) {
+                                // Crear y agregar la figura del barco
+                                IShip ship = createShip(shipInfo.size);
+                                ship.setOrientation(shipInfo.horizontal);
+                                Group shipGroup = ship.createShipShape(0, 0, shipInfo.horizontal);
+                                stack.getChildren().add(shipGroup);
+                            }
+                        }
+                    }
+
+                    // Mostrar disparos de la computadora
+                    if (computerShots[i][j] > 0) {
+                        if (userGrid[i][j]) {
+                            button.setStyle("-fx-background-color: #FF4444;");
+                            button.setText("H");
+                        } else {
+                            button.setStyle("-fx-background-color: #87CEEB;");
+                            button.setText("X");
+                        }
+                    }
+                }
+            }
+        }
+
+        // Actualizar tablero de la computadora (código existente)
+        // ... resto del método se mantiene igual
+    }
+
+    // Clase auxiliar para almacenar información del barco
+    private static class ShipInfo {
+        int size;
+        boolean horizontal;
+
+        ShipInfo(int size, boolean horizontal) {
+            this.size = size;
+            this.horizontal = horizontal;
+        }
+    }
+
+    // Método para crear el tipo de barco correspondiente
+    private IShip createShip(int size) {
+        switch (size) {
+            case 4: return new CarrierShip(4);
+            case 3: return new Submarine(3);
+            case 2: return new Destroyer(2);
+            case 1: return new Frigate(1);
+            default: return null;
+        }
+    }
+
+    // Método para verificar si una celda es el inicio de un barco
+    private boolean isShipStart(boolean[][] grid, int row, int col) {
+        // Verificar si hay un barco en la celda actual
+        if (!grid[row][col]) return false;
+
+        // Verificar si es el inicio (no hay barco a la izquierda ni arriba)
+        boolean noShipLeft = col == 0 || !grid[row][col-1];
+        boolean noShipUp = row == 0 || !grid[row-1][col];
+
+        return noShipLeft && noShipUp;
+    }
+
+    // Método para determinar el tipo y orientación del barco
+    private ShipInfo determineShipType(boolean[][] grid, int startRow, int startCol) {
+        // Verificar horizontalmente
+        int horizontalSize = 0;
+        for (int j = startCol; j < 10 && grid[startRow][j]; j++) {
+            horizontalSize++;
+        }
+
+        // Verificar verticalmente
+        int verticalSize = 0;
+        for (int i = startRow; i < 10 && grid[i][startCol]; i++) {
+            verticalSize++;
+        }
+
+        // Determinar la orientación y tamaño del barco
+        if (horizontalSize > verticalSize) {
+            return new ShipInfo(horizontalSize, true);
+        } else if (verticalSize > horizontalSize) {
+            return new ShipInfo(verticalSize, false);
+        } else {
+            // Si son iguales (caso de barco de tamaño 1)
+            return new ShipInfo(1, true);
+        }
+    }
+
+    private void updateShipButtonsFromState(GameState state) {
+        carrierIdHoz.setDisable(state.isShipPlaced("carrier"));
+        carrierIdVer.setDisable(state.isShipPlaced("carrier"));
+        destroyerId1Hoz.setDisable(state.isShipPlaced("destroyer"));
+        destroyerIdVer.setDisable(state.isShipPlaced("destroyer"));
+        submarineIdHoz.setDisable(state.isShipPlaced("submarine"));
+        submarineIdVer.setDisable(state.isShipPlaced("submarine"));
+        frigateId1Ver.setDisable(state.isShipPlaced("frigate"));
+        frigateIdVer.setDisable(state.isShipPlaced("frigate"));
+    }
+    private void showAlert(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
+
+
 }
