@@ -6,9 +6,18 @@ import javafx.scene.shape.Path;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.LineTo;
 
+/**
+ * Represents a visual marker for a sunk ship in the Battleship game.
+ * Extends JavaFX Group to create a custom graphic element.
+ */
 public class SunkMarker extends Group {
+
+    /**
+     * Constructs a new SunkMarker.
+     * Creates a dark red flame-shaped path to indicate a sunk ship.
+     */
     public SunkMarker() {
-        // Crear llama
+
         Path flame = new Path();
         flame.setFill(Color.DARKRED);
 

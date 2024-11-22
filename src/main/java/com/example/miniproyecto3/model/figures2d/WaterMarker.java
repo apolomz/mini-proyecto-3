@@ -4,9 +4,17 @@ import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 
+/**
+ * Represents a graphical marker for water in the Battleship game.
+ * The marker is displayed as an "X" in blue color.
+ */
 public class WaterMarker extends Group {
+
+    /**
+     * Creates a new water marker with an "X" shape.
+     */
     public WaterMarker() {
-        // Crear X
+        // Create the "X" shape
         Line line1 = new Line(5, 5, 25, 25);
         Line line2 = new Line(25, 5, 5, 25);
 

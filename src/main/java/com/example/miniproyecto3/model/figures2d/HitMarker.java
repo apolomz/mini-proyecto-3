@@ -5,9 +5,16 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 
+/**
+ * Represents a visual marker for a hit ship in the Battleship game.
+ * Extends JavaFX Group to create a custom graphic element.
+ */
 public class HitMarker extends Group {
+    /**
+     * Constructs a new HitMarker.
+     * Creates an explosion-like graphic with circles and radiating lines.
+     */
     public HitMarker() {
-        // Crear explosión
         Circle outer = new Circle(15, 15, 12);
         outer.setFill(Color.TRANSPARENT);
         outer.setStroke(Color.RED);
@@ -16,7 +23,6 @@ public class HitMarker extends Group {
         Circle inner = new Circle(15, 15, 6);
         inner.setFill(Color.RED);
 
-        // Rayos de la explosión
         for (int i = 0; i < 8; i++) {
             double angle = i * Math.PI / 4;
             Line ray = new Line(

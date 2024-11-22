@@ -1,23 +1,21 @@
-/* Estilo básico del botón */
+
 .ship-button {
-    -fx-background-color: #4E9BC9;  /* Azul claro que complementa bien con la gama */
-    -fx-text-fill: white;  /* Texto en blanco para un buen contraste */
-    -fx-padding: 10px 20px;  /* Padding equilibrado (no demasiado grande) */
-    -fx-font-weight: bold;  /* Texto en negrita */
-    -fx-font-size: 14px;  /* Ajustado para que no se vea grande */
-    -fx-cursor: hand;  /* Cursor en forma de mano */
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 8, 0, 2, 2); /* Sombra ligera para suavizar el botón */
-    -fx-transition: background-color 0.3s ease, transform 0.3s ease; /* Transición suave */
+    -fx-background-color: #4E9BC9;
+    -fx-text-fill: white;
+    -fx-padding: 10px 20px;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
 }
 
-/* Efecto hover (cuando el ratón pasa por encima) */
+
 .ship-button:hover {
-    -fx-background-color: #39729B;  /* Tono de azul más oscuro */
-    -fx-transform: scale(1.03);  /* Botón crece ligeramente */
+    -fx-background-color: #39729B;
+    -fx-transform: scale(1.03);
 }
 
-/* Efecto cuando el botón es presionado */
+
 .ship-button:pressed {
-    -fx-background-color: #346A87;  /* Azul aún más oscuro cuando se presiona */
-    -fx-transform: scale(0.98);  /* Botón se encoge ligeramente */
+    -fx-background-color: #346A87;
+    -fx-transform: scale(0.98);
 }
